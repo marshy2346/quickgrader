@@ -1,0 +1,6 @@
+DRIVER = "Lab3Driver.java"
+DIRECTORY = "inputs/Ray"
+INPUT_FILE = "input.txt"
+EXPECTED_OUTPUT_FILE = "inputs/expected.txt"
+JAVAC_COMMAND = "javac"
+JAVA_COMMAND = "java"
