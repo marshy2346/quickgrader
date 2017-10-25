@@ -1,3 +1,13 @@
 /inputs
 *.java
 *.pyc
+*.class
+*.txt
+.DS_Store
+*.csv
+/.vscode
+*.project
+*.classpath
+*.prefs
+._.DS_Store
+*.pdf
