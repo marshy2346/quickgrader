@@ -137,7 +137,7 @@ def init_tempfiles():
         os.remove(ERROR_PATH)
 
     # create error file
-    fd = open(ERROR_PATH, 'w', encoding='ascii')
+    fd = open(ERROR_PATH, 'w', encoding='utf-8')
     fd.close()
 
     # create comments file
@@ -145,7 +145,7 @@ def init_tempfiles():
     fd.close()
 
     if os.path.isfile(SAVED_PATH):
-        with open(SAVED_PATH, 'r', encoding='ascii') as fd:
+        with open(SAVED_PATH, 'r', encoding='utf-8') as fd:
             CURRENT_INDEX = int(fd.readline())
 
 @contextmanager
@@ -174,8 +174,8 @@ def Popen_communicate(args, stdin=None, shell=False):
 
     out, err = proc.communicate()
 
-    # bytes -> ascii
-    return out.decode('ascii'), err.decode('ascii')
+    # bytes -> utf-8
+    return out.decode('utf-8'), err.decode('utf-8')
 
 def write_error(name, error):
     """
@@ -187,7 +187,7 @@ def write_error(name, error):
     print(""" Error found in {}. """.format(name))
     print(""" Writing to error file... """)
     
-    with open(ERROR_PATH, 'a', encoding='ascii') as errfd:
+    with open(ERROR_PATH, 'a', encoding='utf-8') as errfd:
         errfd.write("{}\n".format(name))
 
     print(""" Complete. \n\n""")
@@ -277,7 +277,7 @@ if __name__ == "__main__":
         # Run Stage
         if COMPILED:
             if os.path.isfile(INPUT_FILE):
-                with open(INPUT_FILE, 'r', encoding='ascii') as inputfd:
+                with open(INPUT_FILE, 'r', encoding='utf-8') as inputfd:
                     run_out, run_err = run_driver(directory, DRIVER, inputfd)
             else:
                 error_prompt(""" Input file not found. """)
@@ -291,7 +291,7 @@ if __name__ == "__main__":
                 RUN = True
                 # write output to temp file for diff
                 tmpfile_name = get_tmpfile_name(directory)
-                with open(tmpfile_name, 'w', encoding='ascii') as tmpfile:
+                with open(tmpfile_name, 'w', encoding='utf-8') as tmpfile:
                     tmpfile.write(run_out)
 
         if RUN:
