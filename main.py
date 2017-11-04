@@ -360,9 +360,7 @@ def commandline(directory_base, directory):
 
         if args_split[0].lower() == 'run' or args_split[0].lower() == 'r':
             if len(args_split) < 2:
-                print("Forgot to add a filename...")
-                print("ex: $ r filename.java ")
-                continue
+                args_split.append(DRIVER)
 
             c_out, c_err = compile_driver(directory, args_split[1])
             if c_err != '':
