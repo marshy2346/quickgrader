@@ -28,6 +28,12 @@ global_compile_errors = 0
 global_run_errors = 0
 
 def get_uin(filename):
+    """
+    Very naive implementation to get the uin from the filename
+
+    :param filename: the student file
+    :return: the uin
+    """
     uin = ""
     n = 0
     skip = True
@@ -45,20 +51,12 @@ def get_uin(filename):
     else:
         return uin
 
-def remove_first_match(file, regex):
-    #TODO: test this 
-    stop_matching = False
-    data = []
-    with open(file, 'w') as f:
-        for line in f: 
-            m = re.match(regex, line) 
-            if m and not stop_matching:
-                stop_matching = True
-            else:
-                data.append(line)
-        f.writelines(data)
-
 def flatdir(dir):
+    """
+    Moves all files up to the root directory.
+
+    :param dir: directory to flatten
+    """
     full_path = os.path.abspath(dir)
 
     for root, dirs, files in os.walk(full_path, topdown=False):
@@ -74,16 +72,28 @@ def flatdir(dir):
     return dirs
 
 def unzip(src, dst):
+   """
+   Unzips a file from src to dst.
+
+   :param src: source zipfile path
+   :param dst: destination path
+   """
    ref = zipfile.ZipFile(src, 'r')
    ref.extractall(dst)
    ref.close()
 
 def get_tmpfile_name(directory):
+    """
+    Returns a generic temporary file name expected for all output files.
+    :param directory:
+    """
     return '{}-tmp.txt'.format("".join(directory.split()))
 
 def remove_ext(file):
     """
     Removes extension from filename
+
+    :param file: file with extension
     """
     return os.path.splitext(file)[0]
 
@@ -96,7 +106,7 @@ def get_working_directory():
     path = DIRECTORY
     directories = []
 
-    # removing working directory folder if it exists   
+    # removing working directory folder if it exists
     print(""" Initializing working directory """)
     if os.path.isdir(WORKING_DIRECTORY_PATH):
             print(""" Working directory exists... """)
@@ -120,7 +130,7 @@ def get_working_directory():
         # copy driver to folder
         shutil.copyfile(DRIVER, os.path.join(output_path, DRIVER))
 
-        # add directory 
+        # add directory
         directories.append(output_path)
 
     print(""" Initialization complete. """)
@@ -128,9 +138,19 @@ def get_working_directory():
     return directories
 
 def init_tempfiles():
+    """
+    Initializes all temporary files used.
+
+    files
+    ------
+    comments
+    error
+    """
+    # TODO: saved path
+
     # removing comments file if it exists
     if os.path.isfile(COMMENTS_PATH):
-        error_prompt("""{} exists.\n\n """.format(COMMENTS_PATH)) 
+        error_prompt("""{} exists.\n\n """.format(COMMENTS_PATH))
         os.remove(COMMENTS_PATH)
     # removing error file if it exists
     if os.path.isfile(ERROR_PATH):
@@ -152,6 +172,8 @@ def init_tempfiles():
 def cd(newdir):
     """
     Changes to directory
+
+    :param newdir: directory to change to
     """
     prevdir = os.getcwd()
     os.chdir(os.path.expanduser(newdir))
@@ -163,6 +185,10 @@ def cd(newdir):
 def Popen_communicate(args, stdin=None, shell=False):
     """
     Hooks into Popen io and returns stdout, stderr
+
+    :param args: the arguments to run
+    :param stdin: optional stdin
+    :param shell: optional shell
     """
     proc = subprocess.Popen(
         args,
@@ -180,13 +206,16 @@ def Popen_communicate(args, stdin=None, shell=False):
 def write_error(name, error):
     """
     Writes error to error file and increments error counter
+
+    :param name: name to describe what student had error
+    :param error: error output
     """
-    global global_nerrors 
+    global global_nerrors
     global_nerrors += 1
 
     print(""" Error found in {}. """.format(name))
     print(""" Writing to error file... """)
-    
+
     with open(ERROR_PATH, 'a', encoding='utf-8') as errfd:
         errfd.write("{}\n".format(name))
 
@@ -194,7 +223,15 @@ def write_error(name, error):
 
 def run_diff(name):
     """
-    Runs the diff for two files 
+    Runs a program that shows differences in the expected output and the actual output.
+
+    Windows:
+        FC
+    Unix:
+        vimdiff
+
+
+    :param name: the name of the file to run the difference on
     """
     tmp = get_tmpfile_name(name)
     print(""" Capturing diff for {}. """.format(name))
@@ -203,12 +240,18 @@ def run_diff(name):
     if os.path.isfile(EXPECTED_OUTPUT_FILE):
         if os.name == 'nt':
             os.system("""FC {} {}""".format(EXPECTED_OUTPUT_FILE, tmp))
-        else: 
+        else:
             os.system("""vimdiff {} {}""".format(EXPECTED_OUTPUT_FILE, tmp))
     else:
         error_prompt(""" Expected output file not found. """)
 
 def add_comment(name, comment):
+    """
+    Used to write a comment to a CSV file.
+
+    :param name: name to describe the student
+    :param comment: the comment to be added
+    """
     if not os.path.isfile(COMMENTS_PATH):
         error_prompt(""" Can't find comments file. """)
         sys.exit(-1)
@@ -223,6 +266,10 @@ def add_comment(name, comment):
 def compile_driver(directory, driver):
     """
     Compiles the driver and returns stdout and stderr
+
+    :param directory: the path to the directory to compile the driver
+    :param driver: the path to the driver
+    :return: stdout, stderr
     """
     with cd(directory):
         stdout, stderr = Popen_communicate([JAVAC_COMMAND, driver])
@@ -231,17 +278,24 @@ def compile_driver(directory, driver):
 def run_driver(directory, driver, input=None):
     """
     Runs the driver and returns stdout and stderr
+
+    :param directory: the path to the directory to run driver
+    :param driver: the path to the driver
+    :param input: optional input to the program
+    :return: stdout, stderr
     """
     with cd(directory):
         stdout, stderr = Popen_communicate(
             [JAVA_COMMAND, remove_ext(driver)],
             stdin=input
-        ) 
+        )
     return stdout, stderr
 
 def error_prompt(message):
     """
     Prints an error prompt
+
+    :param message: the message to display
     """
     print("""\n\n {} """.format(message))
     choice = input(""" Continue? (y/n) """)
@@ -266,11 +320,11 @@ if __name__ == "__main__":
         directory_base = os.path.basename(directory)
 
         # Compilation Stage
-        compile_out, compile_err = compile_driver(directory, DRIVER)            
+        compile_out, compile_err = compile_driver(directory, DRIVER)
         if compile_err != '':
             global_compile_errors += 1
 
-            write_error(directory_base, compile_err) 
+            write_error(directory_base, compile_err)
         else:
             COMPILED = True
 

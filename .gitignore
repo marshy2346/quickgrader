@@ -11,3 +11,6 @@
 *.prefs
 ._.DS_Store
 *.pdf
+tmp/
+working_directory/
+.idea/
