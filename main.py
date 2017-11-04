@@ -322,7 +322,7 @@ def print_gui_prompt():
     print(""" ==========================================""")
     print(""" Additional Commands: """)
     print(""" --------------------------------------------------------------------------------- """)
-    print(""" r <filename>.java (run)     - compiles and runs java file """)
+    print(""" r <filename>.java (run)     - compiles and runs java file, if no file specified DRIVER is used. """)
     print(""" e                 (error)   - log to error and go to next student """)
     print(""" n                 (next)    - next student """)
     print(""" c <message>       (comment) - add a comment for the student in comments.csv """)
