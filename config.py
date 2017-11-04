@@ -1,5 +1,5 @@
-DRIVER = "Lab3Driver.java"
-DIRECTORY = "tmp/Ray 2"
+DRIVER = "HW1Driver.java"
+DIRECTORY = "tmp/Ray"
 INPUT_FILE = "tmp/input.txt"
 EXPECTED_OUTPUT_FILE = "tmp/output.txt"
 JAVAC_COMMAND = "javac"

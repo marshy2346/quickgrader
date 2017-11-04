@@ -16,6 +16,12 @@ specified driver and finally runs a 'diff' command to see the difference
 between what was expected and what the output actually was.
 """
 
+class Mode:
+    CONSOLE = "CONSOLE"
+    GUI = "GUI"
+
+MODE = Mode.CONSOLE
+
 WORKING_DIRECTORY_PATH = "working_directory"
 ERROR_PATH = "errors.txt"
 COMMENTS_PATH = "comments.csv"
@@ -124,14 +130,17 @@ def get_working_directory():
             WORKING_DIRECTORY_PATH, remove_ext(get_uin(directory))
         )
 
-        unzip(current_path, output_path)
-        flatdir(output_path)
+        if current_path.endswith('zip'):
+            unzip(current_path, output_path)
+            flatdir(output_path)
 
-        # copy driver to folder
-        shutil.copyfile(DRIVER, os.path.join(output_path, DRIVER))
+            # copy driver to folder
+            shutil.copyfile(DRIVER, os.path.join(output_path, DRIVER))
 
-        # add directory
-        directories.append(output_path)
+            # add directory
+            directories.append(output_path)
+        else:
+            print(""" {} not detected as zip file. """.format(current_path))
 
     print(""" Initialization complete. """)
 
@@ -150,7 +159,7 @@ def init_tempfiles():
 
     # removing comments file if it exists
     if os.path.isfile(COMMENTS_PATH):
-        error_prompt("""{} exists.\n\n """.format(COMMENTS_PATH))
+        error_prompt(""" {} exists.\n\n """.format(COMMENTS_PATH))
         os.remove(COMMENTS_PATH)
     # removing error file if it exists
     if os.path.isfile(ERROR_PATH):
@@ -230,7 +239,6 @@ def run_diff(name):
     Unix:
         vimdiff
 
-
     :param name: the name of the file to run the difference on
     """
     tmp = get_tmpfile_name(name)
@@ -297,14 +305,93 @@ def error_prompt(message):
 
     :param message: the message to display
     """
-    print("""\n\n {} """.format(message))
+    print(""" \n{} """.format(message))
     choice = input(""" Continue? (y/n) """)
     if choice.lower() != 'y':
         print(""" Bye. """)
         sys.exit(0)
 
+def user_prompt(message, response_cb):
+    print(""" \n{} """.format(message))
+    response = input(""":> """)
+    return response_cb(response)
+
+def print_gui_prompt():
+    print(""" ==========================================""")
+    print(""" You are in GUI Mode. """)
+    print(""" ==========================================""")
+    print(""" Additional Commands: """)
+    print(""" --------------------------------------------------------------------------------- """)
+    print(""" r <filename>.java (run)     - compiles and runs java file """)
+    print(""" e                 (error)   - log to error and go to next student """)
+    print(""" n                 (next)    - next student """)
+    print(""" c <message>       (comment) - add a comment for the student in comments.csv """)
+    print(""" h                 (help)    - to display this prompt again """)
+    print(""" --------------------------------------------------------------------------------- """)
+    print(""" [Note]: All commands from your interpreter program should work. """)
+    print("""                                        """)
+
+def commandline(directory_base, directory):
+    INTERACTING = True
+    while INTERACTING:
+        args = input(":> ").strip()
+
+        args_lower = args.lower()
+        args_split = [s for s in args.split(' ')]
+
+        if args_lower == 'error' or args_lower == 'e':
+            return '', 'compile or run error' # write skipped to error file
+        elif 'quit' in args_lower or args_lower == 'q':
+            sys.exit(0)
+        elif args_lower == 'n' or args_lower == 'next':
+            # this is really hacky but its so no error is written out
+            return '', ''
+        elif args_lower[0] == 'c' or args_lower[:6] == 'comment':
+            if len(args_split) < 2:
+                print("Forgot to add a comment...")
+                print("ex: $ c add comment here")
+                continue
+            add_comment(directory_base, args[2:])
+            continue
+
+        elif args_lower == 'h' or args_lower == 'help':
+            print_gui_prompt()
+            continue
+
+        if args_split[0].lower() == 'run' or args_split[0].lower() == 'r':
+            if len(args_split) < 2:
+                print("Forgot to add a filename...")
+                print("ex: $ r filename.java ")
+                continue
+
+            c_out, c_err = compile_driver(directory, args_split[1])
+            if c_err != '':
+                print(c_err)
+            r_out, r_err = run_driver(directory, args_split[1])
+            if r_err != '':
+                print(r_err)
+            else:
+                print(r_out)
+        else:
+            with cd(directory):
+                out, err = Popen_communicate([s for s in args.split(' ')])
+
+                if err != '':
+                    print(err)
+                else:
+                    print(out)
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--gui-mode", help="""
+        puts the program in gui mode which only compiles code and then walks through each submission allowing
+        the user to run whichever program he wants.
+    """, action="store_true")
+    args = parser.parse_args()
+
+    if args.gui_mode:
+        MODE = Mode.GUI
+
     directories = get_working_directory()
 
     init_tempfiles()
@@ -313,45 +400,76 @@ if __name__ == "__main__":
     ndirs = len(directories)
     print(""" {} Directories moved. \n\n""".format(ndirs))
 
+    if MODE == Mode.GUI:
+        print_gui_prompt()
+
     for directory in directories:
         COMPILED = False
         RUN = False
 
         directory_base = os.path.basename(directory)
 
-        # Compilation Stage
-        compile_out, compile_err = compile_driver(directory, DRIVER)
-        if compile_err != '':
-            global_compile_errors += 1
+        if MODE == Mode.GUI:
+                if os.name == 'nt':
+                    args = ['dir']
+                else:
+                    args = ['ls']
 
-            write_error(directory_base, compile_err)
-        else:
-            COMPILED = True
+                with cd(directory):
+                    out, err = Popen_communicate(args)
+                if err != '':
+                    write_error(directory_base, err)
+                else:
+                    # prints out list of files
+                    print(""" Files in {} """.format(directory))
+                    print(""" ---------------------------""")
+                    print(out)
 
-        # Run Stage
-        if COMPILED:
-            if os.path.isfile(INPUT_FILE):
-                with open(INPUT_FILE, 'r', encoding='utf-8') as inputfd:
-                    run_out, run_err = run_driver(directory, DRIVER, inputfd)
+                    # if the user enters skip then the program will log the student in error file
+                    out, err = commandline(directory_base, directory)
+                    print(err)
+
+                    if err != '':
+                        global_run_errors += 1
+                        write_error(directory_base, err)
+
+        elif MODE == Mode.CONSOLE:
+
+            # Compilation Stage
+            compile_out, compile_err = compile_driver(directory, DRIVER)
+            if compile_err != '':
+                global_compile_errors += 1
+
+                write_error(directory_base, compile_err)
             else:
-                error_prompt(""" Input file not found. """)
-                run_out, run_err = run_driver(directory, DRIVER)
+                COMPILED = True
 
-            if run_err != '':
-                global_run_errors += 1
+            # Run Stage
+            if COMPILED:
 
-                write_error(directory_base, run_err)
-            else:
-                RUN = True
-                # write output to temp file for diff
-                tmpfile_name = get_tmpfile_name(directory)
-                with open(tmpfile_name, 'w', encoding='utf-8') as tmpfile:
-                    tmpfile.write(run_out)
+                if MODE == Mode.CONSOLE:
+                    if os.path.isfile(INPUT_FILE):
+                        with open(INPUT_FILE, 'r', encoding='utf-8') as inputfd:
+                            run_out, run_err = run_driver(directory, DRIVER, inputfd)
+                    else:
+                        error_prompt(""" Input file not found. """)
+                        run_out, run_err = run_driver(directory, DRIVER)
 
-        if RUN:
-            run_diff(directory)
-            comment = input(""" Add a comment: """)
-            add_comment(directory_base, comment)
+                    if run_err != '':
+                        global_run_errors += 1
+
+                        write_error(directory_base, run_err)
+                    else:
+                        RUN = True
+                        # write output to temp file for diff
+                        tmpfile_name = get_tmpfile_name(directory)
+                        with open(tmpfile_name, 'w', encoding='utf-8') as tmpfile:
+                            tmpfile.write(run_out)
+
+            if RUN:
+                run_diff(directory)
+                comment = input(""" Add a comment: """)
+                add_comment(directory_base, comment)
 
     print(""" ---- Results ---- """)
     print(""" Errors: {} """.format(global_nerrors))

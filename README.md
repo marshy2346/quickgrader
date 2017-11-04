@@ -1,7 +1,24 @@
 # QuickGrader
 __Version: 1.0__
 
+__TODO__: Make this documentation better.
+
 <br/>
+
+
+__New Features__:
+    __GUI Mode__
+        add --gui-mode flag
+    This mode walks through all of the student submissions and allows you to run terminal commands. It
+    also provides some utility commands which include,
+    `
+        r <filename>.java - to compile and run a java file
+        e                 - to record the students submission in the error file
+        n                 - go to next student
+        c <message>       - write comment for student
+        h                 - display help prompt
+
+    `
 
 __Instructions__:
 
