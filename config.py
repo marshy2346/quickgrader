@@ -1,6 +1,0 @@
-DRIVER = "HW1Driver.java"
-DIRECTORY = "tmp/Ray"
-INPUT_FILE = "tmp/input.txt"
-EXPECTED_OUTPUT_FILE = "tmp/output.txt"
-JAVAC_COMMAND = "javac"
-JAVA_COMMAND = "java"

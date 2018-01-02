@@ -1,12 +1,15 @@
 # QuickGrader
-__Version: 1.1__
+__Version: 2.0__
 <br/>
 
-A helper script I use to facilitate grading student's java programs. 
+An extensible GUI Program written in PyQt5 to help professors and teachers grade student submissions.
 
-__TODO__: Make this documentation better.
+__Note:__
+V2.0 is currently in development. V1.0 is obsolete.
 
 <br/>
+
+__V1.0 Notes__
 
 
 __New Features__:
