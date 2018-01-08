@@ -1,5 +1,7 @@
 import os
 import shutil
+import zipfile
+from pathlib import Path
 
 def unzip(src, dst):
    """
@@ -27,6 +29,34 @@ def remove_ext(file):
     """
     return os.path.splitext(file)[0]
 
+def get_ext(path):
+    """
+    Returns the extension of a file or path to a file.
+
+    :param path: path to file
+    """
+    fn, ext = os.path.splitext(path)
+    return ext
+
+def home():
+    """
+    Returns home directory path
+    """
+    return str(Path.home())
+
+def overwrite(path):
+    """
+    Deletes file or directory and creates a new empty file or directory.
+
+    :param path: the path to file or directory
+    """
+    if os.path.isdir(path):
+        shutil.rmtree(path)
+        os.mkdir(path)
+    elif os.path.isfile(path):
+        fd = open(path, 'w')
+        fd.close()
+
 def flatdir(dir):
     """
     Moves all files up to the root directory.
@@ -47,47 +77,3 @@ def flatdir(dir):
 
     return dirs
 
-# TODO: make this useful for quickgrader v2.0
-def get_working_directory():
-    """
-    Moves all zip files in DIRECTORY and moves them to
-    WORKING_DIRECTORY_PATH. All new unzipped folder paths
-    will be returned.
-    """
-    path = DIRECTORY
-    directories = []
-
-    # removing working directory folder if it exists
-    print(""" Initializing working directory """)
-    if os.path.isdir(WORKING_DIRECTORY_PATH):
-            print(""" Working directory exists... """)
-            print(""" Deleting working_directory...  """)
-            shutil.rmtree(WORKING_DIRECTORY_PATH)
-            print(""" Finished.  \n\n""")
-
-    # make new working directory folder
-    os.mkdir(WORKING_DIRECTORY_PATH)
-
-    # unzipping and flattening each directory and moving to working dir
-    for directory in os.listdir(path):
-        current_path = os.path.join(path, directory)
-        output_path = os.path.join(
-            WORKING_DIRECTORY_PATH, remove_ext(get_uin(directory))
-        )
-
-        if current_path.endswith('zip'):
-            unzip(current_path, output_path)
-            flatdir(output_path)
-
-            # copy driver to folder
-            shutil.copyfile(DRIVER, os.path.join(output_path, DRIVER))
-
-            # add directory
-            directories.append(output_path)
-        else:
-            print(""" {} not detected as zip file. """.format(current_path))
-
-    print(""" Initialization complete. """)
-
-    return directories
-def get_working_directory():

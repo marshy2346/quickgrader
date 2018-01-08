@@ -14,3 +14,4 @@
 tmp/
 working_directory/
 .idea/
+*.swp

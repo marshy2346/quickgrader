@@ -1,89 +1,160 @@
 import sys
-from enum import Enum
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QAction, qApp, QMessageBox
-from PyQt5.QtCore import QCoreApplication, pyqtSlot
+import os
 
-# TODO: setup packaging with cx_freeze
-# TODO: setup plugin system
+from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, qApp, QVBoxLayout, QWidget, QSplitter
+from PyQt5.QtCore import Qt
 
-CURRENT_VERSION = "2.0"
+import constants
+import project
+import settings
+from models.submission import Submission
+from ui.dialog import show_warning, show_message
+from ui.editor import Editor
+from ui.fileview import FileView
+from ui.toolbar import Toolbar
+from ui.commentbox import CommentBox
 
-KEYMAP = {
-    'New Workspace': 'Ctrl+N',
-    'Open Workspace': 'Ctrl+O',
-    'Exit': 'Ctrl+Q'
-}
+g_settings_manager = settings.SettingsManager()
+g_project_manager = project.ProjectManager()
 
-def show_message(parent, content):
-    reply = QMessageBox.question(
-        parent, "Message", content, QMessageBox.Ok, QMessageBox.Ok
-    )
+class Menu:
+    def __init__(self, _qmainwindow):
+        self.main_window = _qmainwindow
+        self.menu = _qmainwindow.menuBar()
+        self.__setup_file_menu()
 
-def show_warning(parent, content, ok_cb, cancel_cb):
-    reply = QMessageBox.question(
-        parent, "Warning", content,
-        QMessageBox.Ok | QMessageBox.Cancel, QMessageBox.Cancel
-    )
-    if reply == QMessageBox.Ok:
-        if ok_cb != None:
-            ok_cb()
-    elif reply == QMessageBox.Cancel:
-        if cancel_cb != None:
-            cancel_cb()
-
-
-class QuickGrader(QMainWindow):
-
-    #TODO: setup icon
-
-    def __init__(self):
-        super().__init__()
-        self._setup_ui()
-
-    def _get_title(self):
-        return "QuickGrader" + " V" + CURRENT_VERSION
-
-    def _setup_ui(self):
-        self.setGeometry(300, 300, 300, 220)
-        self.setWindowTitle(self._get_title())
-
-        self._setup_menu()
-
-        self.show()
-
-    def _new_action(self, name, shortcut, handler):
-        action = QAction(name, self)
-        action.setShortcut(shortcut)
+    def __get_new_menu_action(self, key, handler):
+        action = QAction(key, self.main_window)
+        action.setShortcut(g_settings_manager.keymap[key])
         action.triggered.connect(handler)
         return action
 
-    def _setup_menu(self):
-        main_menu = self.menuBar()
-
-        file_menu = main_menu.addMenu('&File')
+    def __setup_file_menu(self):
+        file_menu = self.menu.addMenu('&File')
         file_menu.addAction(
-            self._new_action("Exit", KEYMAP['Exit'], self._handle_exit)
+             self.__get_new_menu_action("Exit", self.__handle_exit)
         )
         file_menu.addAction(
-            self._new_action("New Workspace", KEYMAP['New Workspace'], self._handle_new_workspace)
+            self.__get_new_menu_action("Start Project", self.__handle_new_project)
         )
         file_menu.addAction(
-            self._new_action("Open Workspace", KEYMAP['Open Workspace'], self._handle_open_workspace)
+            self.__get_new_menu_action("Open Project", self.__handle_open_project)
         )
 
-    def _handle_exit(self):
-        show_warning(self,
-            "Are you sure you want to quit?",
-            lambda: qApp.quit(),
-            None
+    def __handle_exit(self):
+        g_project_manager.save(self.main_window)
+        qApp.quit()
+
+    def __handle_new_project(self):
+        success = g_project_manager.new(self.main_window)
+        if success:
+            show_message(
+                self.main_window,
+                "Project setup complete."
+            )
+            self.main_window.setup_project_ui()
+        else:
+            show_message(
+                self.main_window,
+                "Oops! Error occurred. Try again."
+            )
+
+    def __handle_open_project(self):
+        success = g_project_manager.open(self.main_window) 
+        if success:
+            show_message(
+                self.main_window,
+                "Project opened successfully."
+            )
+            self.main_window.setup_project_ui()
+        else:
+            show_message(
+                self.main_window,
+                "Oops! Error occurred. Try Again."
+            )
+
+
+class QuickGrader(QMainWindow):
+    TITLE = "QuickGrader V{}".format(constants.VERSION)
+
+    DIMENSIONS = {
+        'length': 800,
+        'width': 800
+    }
+
+    LOCATION = {
+        'x': 100,
+        'y': 100
+    }
+
+    def __init__(self):
+        super().__init__()
+        self.menu = Menu(self)
+        self.__init_ui()
+
+    def __init_ui(self): 
+        self.__workspace_existence_guard()
+        self.setGeometry(
+            QuickGrader.LOCATION['x'],
+            QuickGrader.LOCATION['y'],
+            QuickGrader.DIMENSIONS['length'],
+            QuickGrader.DIMENSIONS['width']
+        )
+        self.setWindowTitle(QuickGrader.TITLE)
+        self.show()
+
+    def setup_project_ui(self):
+        submission_path = g_project_manager.current_submission().path
+        editor = Editor(self, submission_path)
+        fileview = FileView(self, submission_path, editor.set_view)
+
+        toolbar = Toolbar(self)
+        def prev_submission():
+            g_project_manager.prev_submission()
+            new_path = g_project_manager.current_submission().path
+            fileview.update(new_path)
+        def next_submission():
+            g_project_manager.next_submission()
+            new_path = g_project_manager.current_submission().path
+            fileview.update(new_path)
+
+        toolbar.add_action(
+            "Previous Submission",
+            g_settings_manager.keymap["Previous Submission"],
+            prev_submission
         )
 
-    def _handle_new_workspace(self):
-        print("New Workspace")
+        toolbar.add_action(
+            "Next Submission",
+            g_settings_manager.keymap["Next Submission"],
+            next_submission
+        )
 
-    def _handle_open_workspace(self):
-        print("Open workspace")
+        toolbar.setup_ui()
 
+        commentbox = CommentBox(self)
+
+        vlayout = QVBoxLayout()
+        container = QWidget()
+        hsplit = QSplitter(self)
+        vsplit = QSplitter(self)
+        vsplit.setOrientation(Qt.Vertical)
+
+        hsplit.addWidget(fileview)
+        hsplit.addWidget(editor)
+        hsplit.addWidget(commentbox)
+
+        vlayout.addWidget(hsplit)
+        container.setLayout(vlayout)
+
+        vsplit.addWidget(container)
+        vsplit.addWidget(toolbar)
+
+        self.setCentralWidget(vsplit)
+
+    def __workspace_existence_guard(self):
+        if not os.path.isdir(constants.WORKSPACE_PATH):
+            os.mkdir(constants.WORKSPACE_PATH)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
