@@ -31,74 +31,44 @@ class Menu:
 
     def __setup_file_menu(self):
         file_menu = self.menu.addMenu('&File')
-        file_menu.addAction(
-             self.__get_new_menu_action("Exit", self.__handle_exit)
-        )
-        file_menu.addAction(
-            self.__get_new_menu_action("Start Project", self.__handle_new_project)
-        )
-        file_menu.addAction(
-            self.__get_new_menu_action("Open Project", self.__handle_open_project)
-        )
+        file_menu.addAction(self.__get_new_menu_action("Exit", self.__handle_exit))
+        file_menu.addAction(self.__get_new_menu_action("Start Project", self.__handle_new_project))
+        file_menu.addAction(self.__get_new_menu_action("Open Project", self.__handle_open_project))
 
     def __handle_exit(self):
         g_project_manager.save(self.main_window)
         qApp.quit()
 
     def __handle_new_project(self):
-        success = g_project_manager.new(self.main_window)
-        if success:
-            show_message(
-                self.main_window,
-                "Project setup complete."
-            )
+        if g_project_manager.new(self.main_window):
+            show_message(self.main_window, "Project setup complete.")
             self.main_window.setup_project_ui()
         else:
-            show_message(
-                self.main_window,
-                "Oops! Error occurred. Try again."
-            )
+            show_message(self.main_window, "Oops! Error occurred. Try again.")
 
     def __handle_open_project(self):
-        success = g_project_manager.open(self.main_window) 
-        if success:
-            show_message(
-                self.main_window,
-                "Project opened successfully."
-            )
+        if g_project_manager.open(self.main_window):
+            show_message(self.main_window, "Project opened successfully.")
             self.main_window.setup_project_ui()
         else:
-            show_message(
-                self.main_window,
-                "Oops! Error occurred. Try Again."
-            )
+            show_message(self.main_window, "Oops! Error occurred. Try Again.")
 
 
 class QuickGrader(QMainWindow):
     TITLE = "QuickGrader V{}".format(constants.VERSION)
 
-    DIMENSIONS = {
-        'length': 800,
-        'width': 800
-    }
-
-    LOCATION = {
-        'x': 100,
-        'y': 100
-    }
-
-    def __init__(self):
+    def __init__(self, dimensions, position):
         super().__init__()
         self.menu = Menu(self)
-        self.__init_ui()
+        self.__init_ui(dimensions, position)
 
-    def __init_ui(self): 
-        self.__workspace_existence_guard()
+    def __init_ui(self, dimensions, position): 
+        self.__make_workspace_ifnoexist()
         self.setGeometry(
-            QuickGrader.LOCATION['x'],
-            QuickGrader.LOCATION['y'],
-            QuickGrader.DIMENSIONS['length'],
-            QuickGrader.DIMENSIONS['width']
+            position[0],
+            position[1],
+            dimensions[0],
+            dimensions[1]
         )
         self.setWindowTitle(QuickGrader.TITLE)
         self.show()
@@ -108,29 +78,37 @@ class QuickGrader(QMainWindow):
         editor = Editor(self, submission_path)
         fileview = FileView(self, submission_path, editor.set_view)
 
+        # TODO: find a way to make this more elegant, remember that this application needs to be extensible
+        def load_toolbar_actions(toolbar):
+
+            def prev_submission():
+                g_project_manager.prev_submission()
+                new_path = g_project_manager.current_submission().path
+                editor.root_path = new_path
+                fileview.update(new_path)
+            def next_submission():
+                g_project_manager.next_submission()
+                new_path = g_project_manager.current_submission().path
+                editor.root_path = new_path
+                fileview.update(new_path)
+
+            toolbar.add_action(
+                "Previous Submission",
+                g_settings_manager.keymap["Previous Submission"],
+                prev_submission
+            )
+
+            toolbar.add_action(
+                "Next Submission",
+                g_settings_manager.keymap["Next Submission"],
+                next_submission
+            )
+
+            toolbar.setup_ui()
+
+
         toolbar = Toolbar(self)
-        def prev_submission():
-            g_project_manager.prev_submission()
-            new_path = g_project_manager.current_submission().path
-            fileview.update(new_path)
-        def next_submission():
-            g_project_manager.next_submission()
-            new_path = g_project_manager.current_submission().path
-            fileview.update(new_path)
-
-        toolbar.add_action(
-            "Previous Submission",
-            g_settings_manager.keymap["Previous Submission"],
-            prev_submission
-        )
-
-        toolbar.add_action(
-            "Next Submission",
-            g_settings_manager.keymap["Next Submission"],
-            next_submission
-        )
-
-        toolbar.setup_ui()
+        load_toolbar_actions(toolbar)
 
         commentbox = CommentBox(self)
 
@@ -152,12 +130,15 @@ class QuickGrader(QMainWindow):
 
         self.setCentralWidget(vsplit)
 
-    def __workspace_existence_guard(self):
+    def __make_workspace_ifnoexist(self):
         if not os.path.isdir(constants.WORKSPACE_PATH):
             os.mkdir(constants.WORKSPACE_PATH)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    quickgrader = QuickGrader()
+    rect = app.desktop().screenGeometry()
+    dim = (rect.width(), rect.height())
+    pos = (0, 0)
+    quickgrader = QuickGrader(dim, pos)
     sys.exit(app.exec_())
 
