@@ -10,7 +10,7 @@ from utils.fs import get_ext, overwrite, home, remove_ext, flatdir, unzip
 from utils.parsing import get_uin
 from ui.dialog import request_info, request_directory, show_warning, show_message
 
-#TODO: rename some functions (these names are a bit cryptic)
+#TODO: clean up logic
 #TODO: support more extensions
 #TODO: rethink what happens when unsupported extension is found
 #TODO: what happens if project_control_block save fails?
@@ -68,33 +68,41 @@ class ProjectManager:
         self.project_control_block['finished_submissions'] = []
         self.project_control_block['current_subission_index'] = 0
 
-    def __source_guard(self, source_path):
+    def __is_valid_source(self, source_path):
         self.state = ProjectManagerState.SOURCE_INVALID
+
         if source_path == None or not os.path.isdir(source_path):
             return False
+
         dirs = os.listdir(source_path)
         if len(dirs) == 0:
             return False
+
         for file in os.listdir(source_path):
             if get_ext(file) not in SUPPORTED_EXTS:
                 return False
+
         self.state = ProjectManagerState.SOURCE_VALID
         return True
 
-    def __pcb_recovery_guard(self, path):
+    def __is_valid_pcb_recovery_file(self, path):
         self.state = ProjectManagerState.PCB_STATE_RECOVERY_SOURCE_INVALID
+
         if path == None or not os.path.isfile(path) or os.path.basename(path) != ProjectManager.PROJECT_CONTROL_BLOCK_FILENAME:
             return False
+
         self.state = ProjectManagerState.PCB_STATE_RECOVERY_SOURCE_VALID
         return True
 
-    def __name_guard(self, name):
+    def __is_valid_name(self, name):
         self.state = ProjectManagerState.NAME_INVALID
+
         if name == None or name == '':
             return False
-        length = len(name)
-        if length < 3 or not re.match('^\w+$', name):
+
+        if len(name) < 3 or not re.match('^\w+$', name):
             return False
+
         self.state = ProjectManagerState.NAME_VALID
         return True
 
@@ -104,7 +112,8 @@ class ProjectManager:
 
         for file in os.listdir(directory_path):
             full_path = os.path.join(directory_path, file)
-            if self.__pcb_recovery_guard(full_path):
+
+            if self.__is_valid_pcb_recovery_file(full_path):
                 with open(full_path, 'rb') as pcbfile:
                     try:
                         self.__reset()
@@ -114,17 +123,20 @@ class ProjectManager:
                         return False
                 self.state = ProjectManagerState.PCB_STATE_VALID
                 return True
+
         return False
    
     def __try_control_block_save(self):
         if self.state != ProjectManagerState.PCB_STATE_VALID:
             return False
+
         with open(self.project_control_block['pcb_path'], 'wb') as pcbfile:
             try:
                 pickle.dump(self.project_control_block, pcbfile)
             except pickle.PicklingError:
                 self.state = ProjectManagerState.PCB_STATE_INVALID
                 return False
+
         return True
 
     def __handle_create_project_folder(self, qt_widget, name):
@@ -172,6 +184,7 @@ class ProjectManager:
                 flatdir(output_path)
 
             self.project_control_block['submissions'].append(Submission(output_path))
+
         self.state = ProjectManagerState.PCB_STATE_VALID
         return self.__try_control_block_save()
 
@@ -184,20 +197,11 @@ class ProjectManager:
         valid_directory = False
 
         while source_directory != None and not valid_directory:
-            source_directory = request_directory(
-                qt_widget,
-                'Choose source directory',
-                home(),
-            )
+            source_directory = request_directory(qt_widget, 'Choose source directory', home())
             valid_directory = source_directory is not None and os.path.isdir(source_directory)
-            if not valid_directory and source_directory != None:
-                show_message(
-                    qt_widget,
-                    INVALID_SOURCE_MESSAGE
-                )
 
-        if not valid_directory:
-            return
+            if not valid_directory and source_directory != None:
+                show_message(qt_widget, INVALID_SOURCE_MESSAGE)
 
         return self.__try_control_block_recovery(source_directory)
 
@@ -207,34 +211,24 @@ class ProjectManager:
         valid_name = False 
 
         while project_name != None and not valid_name:
-            project_name = request_info(
-                qt_widget,
-                'Project Name',
-            )
-            valid_name = self.__name_guard(project_name)
+            project_name = request_info(qt_widget, 'Project Name')
+            valid_name = self.__is_valid_name(project_name)
+
             if not valid_name and project_name != None:
-                show_message(
-                    qt_widget,
-                    INVALID_NAME_MESSAGE
-                )
+                show_message(qt_widget, INVALID_NAME_MESSAGE)
 
         if not self.__handle_create_project_folder(qt_widget, project_name):
             return False
 
         source_directory = ""
         valid_directory = False
+
         while source_directory != None and not valid_directory: 
-            source_directory = request_directory(
-                qt_widget,
-                'Choose source directory',
-                home(),
-            )
-            valid_directory = self.__source_guard(source_directory)
+            source_directory = request_directory(qt_widget, 'Choose source directory', home())
+            valid_directory = self.__is_valid_source(source_directory)
+
             if not valid_directory and source_directory != None:
-                show_message(
-                    qt_widget,
-                    INVALID_SOURCE_MESSAGE
-                )
+                show_message(qt_widget, INVALID_SOURCE_MESSAGE)
 
         if not valid_directory or not self.__handle_setup_project(qt_widget, project_name, source_directory):
             self.__abort()
@@ -245,16 +239,16 @@ class ProjectManager:
     def save(self, qt_widget):
         if self.state != ProjectManagerState.PCB_STATE_VALID:
             return
+
         success = self.__try_control_block_save()
+
         if not success:
-            show_message(
-                qt_widget,
-                INVALID_STATE_MESSAGE
-            )
+            show_message(qt_widget, INVALID_STATE_MESSAGE)
 
     def current_submission(self):
         if self.state != ProjectManagerState.PCB_STATE_VALID:
             return None
+
         return self.project_control_block['submissions'][self.project_control_block['current_submission_index']]
 
     def next_submission(self):
