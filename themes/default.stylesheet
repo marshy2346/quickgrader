@@ -1,0 +1,48 @@
+
+QMainWindow {
+    background-color: @primary-color;
+    color: @label-color;
+}
+
+QListView {
+    background-color: @primary-color;
+    color: @label-color;
+}
+
+QGroupBox {
+    background-color: @primary-color;
+    color: @label-color;
+}
+
+QLabel {
+    color: @label-color;
+}
+
+QPushButton {
+    background-color: @primary-color;
+    color: @label-color;
+    padding: @button-padding;
+}
+
+QPushButton:hover {
+    background-color: @hover-color;
+}
+
+QFrame {
+    background-color: @primary-color;
+    color: @label-color;
+}
+
+QMenuBar {
+    background-color: @secondary-color;
+    color: @label-color;
+}
+
+QMenu {
+    background-color: @secondary-color;
+    color: @label-color;
+}
+
+QMenu::item:selected {
+    background-color: @hover-color;
+}
