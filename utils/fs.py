@@ -29,3 +29,22 @@ def is_hidden_file(file):
     """
     base = os.path.basename(filename)
     return base.startswith('.')       
+
+
+def is_directory(path):
+    """
+    Checks if path is a valid directory
+    
+    :param str path: path to directory
+    :returns: True if valid, False otherwise
+    """
+    return path != None and os.path.isdir(path)
+
+def is_file(path):
+    """
+    Checks if path is a valid file 
+    
+    :param str path: path to file 
+    :returns: True if valid, False otherwise
+    """
+    return path != None and os.path.isfile(path)
