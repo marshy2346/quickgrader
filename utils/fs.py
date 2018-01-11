@@ -8,7 +8,7 @@ from pathlib import (
 )
 
 def unzip(src, dst):
-   """
+   """ 
    Unzips a file from src to dst.
 
    :param src: source zipfile path
@@ -31,11 +31,13 @@ def open_file(file_path, program_path=None):
         subprocess.Popen([program_path, file_path])
     else:
         if sys.platform.startswith('darwin'):
-            subprocess.call(('open', file_path))
+            subprocess.Popen(['open', file_path])
         elif os.name == 'nt':
             os.startfile(file_path)
         elif os.name == 'posix':
-            subprocess.call(('xdg-open', file_path))
+            subprocess.Popen(('xdg-open', file_path))
+
+
 
 def is_hidden_file(file):
     """

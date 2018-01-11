@@ -40,11 +40,12 @@ from utils.fs import (
 class QuickGrader(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.project_manager = ProjectManager() 
+        self.settings_manager = SettingsManager()
+
         self.setupUi(self)
         self.__connect_actions()
         self.__make_workspace_folder()
-        self.project_manager = ProjectManager() 
-        self.settings_manager = SettingsManager()
 
     def __make_workspace_folder(self):
         if is_directory(WORKSPACE_PATH):
@@ -65,6 +66,7 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         self.action_exit.triggered.connect(self.__exit)
         self.previous_button.clicked.connect(self.__prev_submission)
         self.next_button.clicked.connect(self.__next_submission)
+        self.add_requirement_button.clicked.connect(self.__add_requirement)
 
     def __update_fileview(self):
         submission = self.project_manager.get_current_submission()
@@ -74,7 +76,7 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         self.file_view.clear()
         for f in os.listdir(submission.path):
             if not f.startswith('_') and not f.startswith('.'):
-                self.file_view.addItem(os.path.join(submission.path, f))
+                self.file_view.addItem(f)
 
     def __new_project(self):
         while True:
@@ -136,13 +138,17 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
 
     def __open_file(self, path):
         project_path = self.project_manager.state['project_path']
+
         if project_path == None:
             show_message(self, "No project is open.")
             return
+
         editor = None
         if self.settings_manager.default_editor != None:
             editor = self.settings_manager.default_editor
-        open_file(path, editor)
+            
+        submission = self.project_manager.get_current_submission()
+        open_file(os.path.join(submission.path, path), editor)
 
     def __prev_submission(self):
         self.project_manager.prev_submission()
@@ -152,7 +158,11 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         self.project_manager.next_submission()
         self.__update_fileview()
 
+    def __add_requirement(self):
+        pass
+
     def __exit(self):
+        self.project_manager.save()
         qApp.exit()
 
 
