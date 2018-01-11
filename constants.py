@@ -1,6 +1,13 @@
+import os
+from utils.fs import (
+    home
+)
+
 VERSION = "2.0"
 
 SUPPORTED_EXTS = ['.zip']
+
+WORKSPACE_PATH = os.path.join(home(), "QuickGraderProjects")
 
 INVALID_NAME_MESSAGE = (
     'Project names must be larger than 3 characters'

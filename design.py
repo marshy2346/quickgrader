@@ -6,7 +6,7 @@ from PyQt5 import (
     QtWidgets
 )
 
-from utils.style import (
+from utils.parsing import (
    replace_vars 
 ) 
 
@@ -73,12 +73,12 @@ class Ui_MainWindow(object):
         self.action_new_project.setObjectName("action_new_project")
         self.action_export = QtWidgets.QAction(MainWindow)
         self.action_export.setObjectName("action_export")
-        self.actionExit = QtWidgets.QAction(MainWindow)
-        self.actionExit.setObjectName("actionExit")
+        self.action_exit= QtWidgets.QAction(MainWindow)
+        self.action_exit.setObjectName("action_exit")
         self.file_menu.addAction(self.action_open_project)
         self.file_menu.addAction(self.action_new_project)
         self.file_menu.addAction(self.action_export)
-        self.file_menu.addAction(self.actionExit)
+        self.file_menu.addAction(self.action_exit)
         self.menubar.addAction(self.file_menu.menuAction())
         self.menubar.addAction(self.about_menu.menuAction())
 
@@ -111,5 +111,5 @@ class Ui_MainWindow(object):
         self.action_open_project.setText(_translate("MainWindow", "Open Project"))
         self.action_new_project.setText(_translate("MainWindow", "New Project"))
         self.action_export.setText(_translate("MainWindow", "Export"))
-        self.actionExit.setText(_translate("MainWindow", "Exit"))
+        self.action_exit.setText(_translate("MainWindow", "Exit"))
 

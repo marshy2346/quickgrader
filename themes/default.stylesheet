@@ -18,6 +18,23 @@ QLabel {
     color: @label-color;
 }
 
+QDialog {
+    background-color: @primary-color;
+    color: @label-color;
+}
+QInputDialog {
+    background-color: @primary-color;
+    color: @label-color;
+}
+QLineEdit {
+    background-color: @primary-color;
+    color: @label-color;
+}
+QFileDialog {
+    background-color: @primary-color;
+    color: @label-color;
+}
+
 QPushButton {
     background-color: @primary-color;
     color: @label-color;
