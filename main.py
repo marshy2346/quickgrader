@@ -33,7 +33,8 @@ from utils.fs import (
     is_directory,
     overwrite,
     home,
-    is_hidden_file
+    is_hidden_file,
+    open_file
 )
 
 class QuickGrader(QMainWindow, Ui_MainWindow):
@@ -58,12 +59,12 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
                 self.file_view.append(s)
 
     def __connect_actions(self):
+        self.file_view.itemDoubleClicked.connect(lambda list_item: self.__open_file(list_item.text()))
         self.action_new_project.triggered.connect(self.__new_project)
         self.action_open_project.triggered.connect(self.__open_project)
         self.action_exit.triggered.connect(self.__exit)
         self.previous_button.clicked.connect(self.__prev_submission)
         self.next_button.clicked.connect(self.__next_submission)
-        self.open_editor_button.clicked.connect(self.__open_editor)
 
     def __update_fileview(self):
         submission = self.project_manager.get_current_submission()
@@ -133,14 +134,15 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
                 else:
                     show_message(self, INVALID_SOURCE_MESSAGE)
 
-    def __open_editor(self):
-        show_message(self, "Sorry. Not currently supported.")
-#        project_path = self.project_manager.state['project_path']
-#        if project_path == None:
-#            show_message(self, "No project is open.")
-#            return
-#        if self.settings_manager.default_editor == None:
-#            default_editor = show_directory_request(self, "Choose default editor") 
+    def __open_file(self, path):
+        project_path = self.project_manager.state['project_path']
+        if project_path == None:
+            show_message(self, "No project is open.")
+            return
+        editor = None
+        if self.settings_manager.default_editor != None:
+            editor = self.settings_manager.default_editor
+        open_file(path, editor)
 
     def __prev_submission(self):
         self.project_manager.prev_submission()
