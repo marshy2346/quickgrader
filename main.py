@@ -1,5 +1,6 @@
 import os
 import sys
+import signal
 
 from PyQt5.QtWidgets import (
     qApp,
@@ -61,6 +62,10 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         self.requirements_view.setCornerButtonEnabled(False)
         self.__connect_actions()
         self.__make_workspace_folder()
+        self.__signal_handlers()
+
+    def __signal_handlers(self):
+        signal.signal(signal.SIGINT, lambda: self.__save())
 
     def __is_project_loaded(self):
         submission = self.project_manager.get_current_submission()
@@ -99,6 +104,8 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
     def __update_fileview(self):
         if self.__is_project_loaded():
             submission = self.project_manager.get_current_submission()
+            print("Submission Requirements ::: ")
+            print(submission.requirements)
             self.requirement_model.replace_data(submission.requirements)
             self.current_submission_label.setText(os.path.basename(submission.path))
 
@@ -214,6 +221,7 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         submission.requirements = data
 
     def __exit(self):
+        print("__EXIT Called!")
         self.project_manager.save()
         qApp.exit()
 
