@@ -4,7 +4,8 @@ import sys
 from PyQt5.QtWidgets import (
     qApp,
     QApplication,
-    QMainWindow
+    QMainWindow,
+    QAbstractItemView
 )
 
 from design import (
@@ -16,6 +17,9 @@ from constants import (
     PROJECT_EXISTS_MESSAGE,
     INVALID_NAME_MESSAGE,
     INVALID_SOURCE_MESSAGE
+)
+from requirement import (
+    RequirementModel
 )
 from project import (
     ProjectManager
@@ -36,16 +40,42 @@ from utils.fs import (
     is_hidden_file,
     open_file
 )
+from utils.parsing import (
+    replace_vars
+)
 
 class QuickGrader(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.project_manager = ProjectManager() 
         self.settings_manager = SettingsManager()
+        self.stylesheet = None
 
         self.setupUi(self)
+        self.__set_theme("default")
+
+        self.requirement_model = RequirementModel()
+        self.requirements_view.setModel(self.requirement_model)
+        self.requirements_view.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.requirements_view.horizontalHeader().setStretchLastSection(True)
+        self.requirements_view.setCornerButtonEnabled(False)
         self.__connect_actions()
         self.__make_workspace_folder()
+
+    def __is_project_loaded(self):
+        submission = self.project_manager.get_current_submission()
+        if submission == None:
+            show_message(self, "No project is loaded.")
+            return False
+        else:
+            return True
+
+    def __set_theme(self, name):
+        self.current_submission_label.setStyleSheet("QLabel { color: #1DE9B6 }")
+        self.stylesheet = os.path.join("themes", name + ".stylesheet")
+        style = replace_vars(os.path.join("themes", name + ".vars"), self.stylesheet)
+        self.setStyleSheet(style)
+        self.update()
 
     def __make_workspace_folder(self):
         if is_directory(WORKSPACE_PATH):
@@ -53,29 +83,29 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         else:
             os.mkdir(WORKSPACE_PATH)
 
-    def __update_fileview(self, submission):
-        self.file_view.clear()
-        for s in os.listdir(submission):
-            if not is_hidden_file(s):
-                self.file_view.append(s)
-
     def __connect_actions(self):
         self.file_view.itemDoubleClicked.connect(lambda list_item: self.__open_file(list_item.text()))
+
         self.action_new_project.triggered.connect(self.__new_project)
         self.action_open_project.triggered.connect(self.__open_project)
         self.action_exit.triggered.connect(self.__exit)
+
         self.previous_button.clicked.connect(self.__prev_submission)
         self.next_button.clicked.connect(self.__next_submission)
+
         self.add_requirement_button.clicked.connect(self.__add_requirement)
+        self.remove_requirement_button.clicked.connect(self.__remove_requirement)
 
     def __update_fileview(self):
-        submission = self.project_manager.get_current_submission()
-        if submission == None:
-            show_message(self, "No project is loaded.")
-            return
-        self.file_view.clear()
-        for f in os.listdir(submission.path):
-            if not f.startswith('_') and not f.startswith('.'):
+        if self.__is_project_loaded():
+            submission = self.project_manager.get_current_submission()
+            self.requirement_model.replace_data(submission.requirements)
+            self.current_submission_label.setText(os.path.basename(submission.path))
+
+            self.file_view.clear()
+            for f in os.listdir(submission.path):
+                if f.startswith('_') or f.startswith('.'):
+                    continue
                 self.file_view.addItem(f)
 
     def __new_project(self):
@@ -108,6 +138,7 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
                 break
             else:
                 success = self.project_manager.new(full_path, source_directory)
+                submission = self.project_manager.state['submissions'][0]
 
                 if success:
                     message = "Project setup complete!"
@@ -151,15 +182,36 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         open_file(os.path.join(submission.path, path), editor)
 
     def __prev_submission(self):
-        self.project_manager.prev_submission()
-        self.__update_fileview()
+        if self.__is_project_loaded():
+            self.__update_submission_requirements()
+            self.project_manager.prev_submission()
+            self.__update_fileview()
 
     def __next_submission(self):
-        self.project_manager.next_submission()
-        self.__update_fileview()
+        if self.__is_project_loaded():
+            self.__update_submission_requirements()
+            self.project_manager.next_submission()
+            self.__update_fileview() 
 
     def __add_requirement(self):
-        pass
+        if self.__is_project_loaded():
+            self.requirement_model.add_requirement_row()
+
+    def __remove_requirement(self):
+        if self.__is_project_loaded():
+            selections = self.requirements_view.selectionModel().selectedRows()
+            self.requirement_model.remove_requirement_row(selections)
+
+    def __update_submission_requirements(self):
+        submission = self.project_manager.get_current_submission()
+        if submission == None:
+            return
+
+        data = self.requirement_model.data[:]
+        if len(data) == 0:
+            return
+
+        submission.requirements = data
 
     def __exit(self):
         self.project_manager.save()

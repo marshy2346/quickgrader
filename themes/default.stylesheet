@@ -8,6 +8,9 @@ QListView {
     background-color: @primary-color;
     color: @label-color;
 }
+QListView::Item::Selected {
+    background-color: @hover-color;
+}
 
 QGroupBox {
     background-color: @primary-color;
@@ -34,11 +37,27 @@ QFileDialog {
     background-color: @primary-color;
     color: @label-color;
 }
+QFileDialog::Url::Selected {
+    background-color: @hover-color;
+}
+QComboBox {
+    background-color: @primary-color;
+    color: @label-color;
+}
 
 QPushButton {
     background-color: @primary-color;
     color: @label-color;
     padding: @button-padding;
+}
+QTableView::QTableCornerButton {
+    background-color: @primary-color;
+}
+QTableView::Item {
+    background-color: @secondary-color;
+}
+QTableView::Item::Selected {
+    background-color: @hover-color;
 }
 
 QPushButton:hover {
@@ -58,6 +77,10 @@ QMenuBar {
 QMenu {
     background-color: @secondary-color;
     color: @label-color;
+}
+
+QMenuBar::item:selected {
+    background-color: @hover-color;
 }
 
 QMenu::item:selected {

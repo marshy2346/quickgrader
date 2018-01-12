@@ -25,27 +25,83 @@
         <widget class="QFrame" name="verticalFrame">
          <layout class="QVBoxLayout" name="verticalLayout">
           <item>
-           <widget class="QLabel" name="file_view_label">
+           <widget class="QLabel" name="current_submission_label">
             <property name="text">
-             <string>File View</string>
+             <string>Submission</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QListWidget" name="file_view"/>
+           <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <item>
+             <widget class="QListWidget" name="file_view"/>
+            </item>
+            <item>
+             <widget class="QFrame" name="frame">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <layout class="QFormLayout" name="formLayout_2">
+               <item row="0" column="0">
+                <widget class="QPushButton" name="compare_button">
+                 <property name="text">
+                  <string>Compare</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout">
+            <item>
+             <widget class="QTableView" name="requirements_view">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QFrame" name="verticalFrame">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <layout class="QFormLayout" name="formLayout">
+               <item row="0" column="0">
+                <widget class="QPushButton" name="add_requirement">
+                 <property name="text">
+                  <string>Add</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QPushButton" name="delete_requirement">
+                 <property name="text">
+                  <string>Delete</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
           </item>
          </layout>
         </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="requirements_label">
-         <property name="text">
-          <string>Requirements</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QTableWidget" name="requirements_view"/>
        </item>
        <item>
         <widget class="QGroupBox" name="groupBox_2">
@@ -57,13 +113,6 @@
            <widget class="QPushButton" name="previous_button">
             <property name="text">
              <string>Previous</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QPushButton" name="open_editor_button">
-            <property name="text">
-             <string>Open Editor</string>
             </property>
            </widget>
           </item>
@@ -105,8 +154,21 @@
      <string>About</string>
     </property>
    </widget>
+   <widget class="QMenu" name="plugins_menu">
+    <property name="title">
+     <string>Plugins</string>
+    </property>
+    <addaction name="action_plugin_install"/>
+   </widget>
+   <widget class="QMenu" name="settings_menu">
+    <property name="title">
+     <string>Settings</string>
+    </property>
+   </widget>
    <addaction name="file_menu"/>
    <addaction name="about_menu"/>
+   <addaction name="plugins_menu"/>
+   <addaction name="settings_menu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action_open_project">
@@ -127,6 +189,11 @@
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="action_plugin_install">
+   <property name="text">
+    <string>Install</string>
    </property>
   </action>
  </widget>
