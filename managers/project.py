@@ -5,7 +5,6 @@ import pickle
 from utils.fs import (
     is_directory,
     is_file,
-    is_hidden_file,
     get_ext,
     remove_ext,
     flatdir,
@@ -14,12 +13,10 @@ from utils.fs import (
 from utils.parsing import (
     get_uin
 )
-from submission import (
+from models.submission import (
     Submission
 )
-from constants import (
-    SUPPORTED_EXTS
-)
+
 
 class ProjectManager:
 
@@ -45,10 +42,7 @@ class ProjectManager:
         return name is not None and len(name) > 3
 
     def __isvalid_source(self, source_path):
-# TODO: determine more robust method for checking if source files are valid 
-#        for file in os.listdir(source_path):
-#            if not is_hidden_file(file) and get_ext(file) not in SUPPORTED_EXTS:
-#                return False
+        # TODO: determine more robust method for checking if source files are valid
         if is_directory(source_path):
             dirs = os.listdir(source_path)
             if len(dirs) == 0:
@@ -81,7 +75,6 @@ class ProjectManager:
         else:
             return False
         
-
     def save(self):
         project_path = self.state['project_path']
         if is_directory(project_path):

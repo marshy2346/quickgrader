@@ -15,15 +15,16 @@ from PyQt5.QtWidgets import (
     QListWidgetItem
 )
 from PyQt5.QtCore import (
-    Qt,
-    QSize
+    Qt
 )
-from PyQt5.QtGui import (
-    QIcon
-)
-from dialog import (
+
+from utils.dialog import (
     show_message
 )
+from constants import (
+    MESSAGE_SETTINGS_EDITOR_HELP
+)
+
 
 class EnvironmentPage(QWidget):
     def __init__(self, settings_manager, parent=None):
@@ -68,19 +69,15 @@ class EnvironmentPage(QWidget):
             self.editor_line.setText(self.settings_manager.default_editor)
 
     def __show_help(self):
-        HELP = (
-            "Add the name of your preferred editor in the text field."
-            " Leaving it blank or writing default will recover default settings."
-            " If you get errors, add the full path to the executable."
-        )
-        show_message(self, HELP)
+        show_message(self, MESSAGE_SETTINGS_EDITOR_HELP)
+
     def __update_editor(self):
         text = self.editor_line.text()
-        if text == None or text == '' or text == 'default':
+        if text is None or text == '' or text == 'default':
             self.settings_manager.default_editor = '' 
             self.settings_manager.save()
             show_message(self, "Default settings active.")
-        elif shutil.which(text) == None:
+        elif shutil.which(text) is None:
             show_message(self, "Invalid executable path.")
         else:
             self.settings_manager.default_editor = text
@@ -93,8 +90,6 @@ class SettingsPanel(QDialog):
         super().__init__(parent)
         self.settings_manager = settings_manager
         self.contents_widget = QListWidget()
-        self.contents_widget.setViewMode(QListView.IconMode)
-        self.contents_widget.setIconSize(QSize(50, 50))
         self.contents_widget.setMovement(QListView.Static)
         self.contents_widget.setMaximumWidth(105)
         self.contents_widget.setSpacing(12)
@@ -133,7 +128,6 @@ class SettingsPanel(QDialog):
 
     def __create_icons(self):
         environment_button = QListWidgetItem(self.contents_widget)
-        environment_button.setIcon(QIcon("assets/environment.png"))
         environment_button.setText("Environment")
         environment_button.setTextAlignment(Qt.AlignHCenter)
         environment_button.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)

@@ -8,29 +8,33 @@ from PyQt5.QtWidgets import (
     QMainWindow, QAbstractItemView
 )
 
-from design import (
+from ui.design import (
     Ui_MainWindow
 )
 from constants import (
-    VERSION,
     WORKSPACE_PATH,
-    PROJECT_EXISTS_MESSAGE,
-    INVALID_NAME_MESSAGE,
-    INVALID_SOURCE_MESSAGE
+    MESSAGE_PROJECT_EXISTS,
+    MESSAGE_PROJECT_NOTLOADED,
+    MESSAGE_INVALID_NAME,
+    MESSAGE_INVALID_SOURCE,
+    MESSAGE_SAVE,
+    MESSAGE_SAVE_ERROR,
+    MESSAGE_ABOUT,
+    DEFAULT_THEME
 )
-from requirement import (
+from models.requirement import (
     RequirementModel
 )
-from project import (
+from managers.project import (
     ProjectManager
 )
-from settings import (
+from managers.settings import (
     SettingsManager
 )
-from settings_panel import (
+from ui.settings_panel import (
     SettingsPanel
 )
-from dialog import (
+from utils.dialog import (
     show_message,
     show_warning,
     show_request,
@@ -40,12 +44,14 @@ from utils.fs import (
     is_directory,
     overwrite,
     home,
-    is_hidden_file,
     open_file
 )
 from utils.parsing import (
     replace_vars
 )
+
+# TODO: logic could be cleaned up
+
 
 class QuickGrader(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
@@ -56,7 +62,7 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         self.settings_manager.load()
 
         self.setupUi(self)
-        self.__set_theme("default")
+        self.__set_theme(DEFAULT_THEME)
         self.__setup_views()
         self.__connect_actions()
         self.__make_workspace_folder()
@@ -68,6 +74,8 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         self.requirements_view.setModel(self.requirement_model)
         self.requirements_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.requirements_view.horizontalHeader().setStretchLastSection(True)
+        self.requirements_view.setColumnWidth(0, 350)
+        self.requirements_view.setColumnWidth(1, 50)
         self.requirements_view.setCornerButtonEnabled(False)
 
     def __setup_keymappings(self):
@@ -86,8 +94,8 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
 
     def __is_project_loaded(self):
         submission = self.project_manager.get_current_submission()
-        if submission == None:
-            show_message(self, "No project is loaded.")
+        if submission is None:
+            show_message(self, MESSAGE_PROJECT_NOTLOADED)
             return False
         else:
             return True
@@ -124,6 +132,7 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
     def __update_fileview(self):
         if self.__is_project_loaded():
             submission = self.project_manager.get_current_submission()
+
             self.requirement_model.replace_data(submission.requirements)
             self.current_submission_label.setText(os.path.basename(submission.path))
 
@@ -137,8 +146,8 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         while True:
             name = show_request(self, "New Project Name")
             if name == '':
-                show_message(self, INVALID_NAME_MESSAGE)
-            elif name == None:
+                show_message(self, MESSAGE_INVALID_NAME)
+            elif name is None:
                 return
             else:
                 break
@@ -146,7 +155,7 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         full_path = os.path.join(WORKSPACE_PATH, name)
 
         if is_directory(full_path):
-            yes = show_warning(self, PROJECT_EXISTS_MESSAGE)
+            yes = show_warning(self, MESSAGE_PROJECT_EXISTS)
             if yes:
                 overwrite(full_path)
             else:
@@ -157,13 +166,12 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         while True:
             source_directory = show_directory_request(self, "Choose source directory", home())
 
-            if source_directory == None or source_directory == '':
+            if source_directory is None or source_directory == '':
                 if os.path.isdir(full_path):
                     os.rmdir(full_path)
                 break
             else:
                 success = self.project_manager.new(full_path, source_directory)
-                submission = self.project_manager.state['submissions'][0]
 
                 if success:
                     message = "Project setup complete!"
@@ -173,13 +181,13 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
                 else:
                     if os.path.isdir(full_path):
                         os.rmdir(full_path)
-                    show_message(self, INVALID_SOURCE_MESSAGE)
+                    show_message(self, MESSAGE_INVALID_SOURCE)
 
     def __open_project(self):
         while True:
             source_directory = show_directory_request(self, "Choose project directory", WORKSPACE_PATH)
 
-            if source_directory == None or source_directory == '':
+            if source_directory is None or source_directory == '':
                 return
             else:
                 success = self.project_manager.load(source_directory)
@@ -190,38 +198,28 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
                     self.__update_fileview()
                     return
                 else:
-                    show_message(self, INVALID_SOURCE_MESSAGE)
+                    show_message(self, MESSAGE_INVALID_SOURCE)
 
     def __save_project(self):
         if self.__is_project_loaded():
             success = self.project_manager.save()
             if success:
-                show_message(self, "Progress has been saved.")
+                show_message(self, MESSAGE_SAVE)
             else:
-                show_message(self, "Error occured during save. Please try again.")
+                show_message(self, MESSAGE_SAVE_ERROR)
 
     def __about(self):
-        ABOUT = (
-            "This project was created in order to facilitate grading student submissions from Canvas."
-            "\n"
-            "\n"
-            "File bug reports and feature requests by visiting"
-            "\n"
-            "https://github.com/rayrase/quickgrader.git"
-            "\n\n"
-            "Created By Raisel Martinez | rayrase@github.com"
-        )
-        show_message(self, ABOUT)
+        show_message(self, MESSAGE_ABOUT)
 
     def __open_file(self, path):
         project_path = self.project_manager.state['project_path']
 
-        if project_path == None:
-            show_message(self, "No project is open.")
+        if project_path is None:
+            show_message(self, MESSAGE_PROJECT_NOTLOADED)
             return
 
         editor = None
-        if self.settings_manager.default_editor != None:
+        if self.settings_manager.default_editor is not None:
             editor = self.settings_manager.default_editor
             
         submission = self.project_manager.get_current_submission()
@@ -241,23 +239,37 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
 
     def __add_requirement(self):
         if self.__is_project_loaded():
-            self.requirement_model.add_requirement_row()
+            while True:
+                res = show_request(self, "New requirement:")
+                if res is None:
+                    return
+                elif res == '':
+                    show_message(self, "Not a valid requirement.")
+                else:
+                    break
+
+            submissions = self.project_manager.state['submissions']
+            for i in range(0, len(submissions)):
+                submissions[i].add_requirement(res)
+
+            self.requirement_model.replace_data(self.project_manager.get_current_submission().requirements)
 
     def __remove_requirement(self):
         if self.__is_project_loaded():
             selections = self.requirements_view.selectionModel().selectedRows()
-            self.requirement_model.remove_requirement_row(selections)
+            if len(selections) == 0:
+                return
+            row = selections[0].row()
+            submissions = self.project_manager.state['submissions']
+            for i in range(0, len(submissions)):
+                submissions[i].remove_requirement(row)
+            self.requirement_model.replace_data(self.project_manager.get_current_submission().requirements)
 
     def __update_submission_requirements(self):
         submission = self.project_manager.get_current_submission()
-        if submission == None:
+        if submission is None:
             return
-
-        data = self.requirement_model.data[:]
-        if len(data) == 0:
-            return
-
-        submission.requirements = data
+        submission.requirements = self.requirement_model.data[:]
 
     def __open_settings_panel(self):
         panel = SettingsPanel(self.settings_manager)
