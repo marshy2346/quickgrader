@@ -26,14 +26,7 @@ class SettingsManager:
         config.set('editor', 'default_editor', self.default_editor)
 
         config.add_section('keymap')
-        config.set('keymap', 'New Project', self.keymap['New Project'])
-        config.set('keymap', 'Open Project', self.keymap['Open Project'])
-        config.set('keymap', 'Save', self.keymap['Save'])
-        config.set('keymap', 'Next Submission', self.keymap['Next Submission'])
-        config.set('keymap', 'Previous Submission', self.keymap['Previous Submission'])
-        config.set('keymap', 'Plugins', self.keymap['Plugins'])
-        config.set('keymap', 'Exit', self.keymap['Exit'])
-        config.set('keymap', 'Export', self.keymap['Export'])
+        config['keymap'] = self.keymap
 
         with open(os.path.join(home(), '.qgsettings'), 'w') as f:
             config.write(f)

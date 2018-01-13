@@ -3,6 +3,8 @@ from utils.fs import (
     home
 )
 
+# TODO: move module-specific constants to module __init__.py
+
 VERSION = "2.0"
 
 SUPPORTED_EXTS = ['.zip']
