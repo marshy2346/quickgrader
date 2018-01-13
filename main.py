@@ -272,7 +272,10 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         submission.requirements = self.requirement_model.data[:]
 
     def __open_settings_panel(self):
+        # TODO: this should not be hard-coded, styles should be the same across all components
         panel = SettingsPanel(self.settings_manager)
+        style = replace_vars(os.path.join("themes", "default.vars"), self.stylesheet)
+        panel.setStyleSheet(style)
         panel.exec_()
 
     def __exit(self):

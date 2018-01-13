@@ -4,6 +4,10 @@ QMainWindow {
     color: @label-color;
 }
 
+QScrollBar {
+    background-color: @primary-color;
+}
+
 QListView {
     background-color: @primary-color;
     color: @label-color;
