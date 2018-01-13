@@ -27,7 +27,7 @@
           <item>
            <widget class="QLabel" name="current_submission_label">
             <property name="text">
-             <string>Submission</string>
+             <string/>
             </property>
            </widget>
           </item>
@@ -84,14 +84,34 @@
                <item row="0" column="0">
                 <widget class="QPushButton" name="add_requirement">
                  <property name="text">
-                  <string>Add</string>
+                  <string/>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>../assets/add.png</normaloff>../assets/add.png</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>40</width>
+                   <height>40</height>
+                  </size>
                  </property>
                 </widget>
                </item>
                <item row="1" column="0">
-                <widget class="QPushButton" name="delete_requirement">
+                <widget class="QPushButton" name="remove_requirement">
                  <property name="text">
-                  <string>Delete</string>
+                  <string/>
+                 </property>
+                 <property name="icon">
+                  <iconset>
+                   <normaloff>../assets/remove.png</normaloff>../assets/remove.png</iconset>
+                 </property>
+                 <property name="iconSize">
+                  <size>
+                   <width>40</width>
+                   <height>40</height>
+                  </size>
                  </property>
                 </widget>
                </item>
@@ -112,14 +132,34 @@
           <item>
            <widget class="QPushButton" name="previous_button">
             <property name="text">
-             <string>Previous</string>
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>../assets/left.png</normaloff>../assets/left.png</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>40</width>
+              <height>30</height>
+             </size>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QPushButton" name="next_button">
             <property name="text">
-             <string>Next</string>
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>../assets/right.png</normaloff>../assets/right.png</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>40</width>
+              <height>30</height>
+             </size>
             </property>
            </widget>
           </item>
@@ -146,13 +186,11 @@
     </property>
     <addaction name="action_open_project"/>
     <addaction name="action_new_project"/>
+    <addaction name="action_exit"/>
+    <addaction name="action_save"/>
     <addaction name="action_export"/>
-    <addaction name="actionExit"/>
-   </widget>
-   <widget class="QMenu" name="about_menu">
-    <property name="title">
-     <string>About</string>
-    </property>
+    <addaction name="action_settings"/>
+    <addaction name="action_about"/>
    </widget>
    <widget class="QMenu" name="plugins_menu">
     <property name="title">
@@ -160,15 +198,8 @@
     </property>
     <addaction name="action_plugin_install"/>
    </widget>
-   <widget class="QMenu" name="settings_menu">
-    <property name="title">
-     <string>Settings</string>
-    </property>
-   </widget>
    <addaction name="file_menu"/>
-   <addaction name="about_menu"/>
    <addaction name="plugins_menu"/>
-   <addaction name="settings_menu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action_open_project">
@@ -186,7 +217,7 @@
     <string>Export</string>
    </property>
   </action>
-  <action name="actionExit">
+  <action name="action_exit">
    <property name="text">
     <string>Exit</string>
    </property>
@@ -194,6 +225,21 @@
   <action name="action_plugin_install">
    <property name="text">
     <string>Install</string>
+   </property>
+  </action>
+  <action name="action_save">
+   <property name="text">
+    <string>Save</string>
+   </property>
+  </action>
+  <action name="action_settings">
+   <property name="text">
+    <string>Settings</string>
+   </property>
+  </action>
+  <action name="action_about">
+   <property name="text">
+    <string>About</string>
    </property>
   </action>
  </widget>

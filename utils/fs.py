@@ -27,7 +27,7 @@ def open_file(file_path, program_path=None):
     :param str file_path: path to file
     :param str program_path: path to program 
     """
-    if program_path is not None:
+    if program_path is not None and program_path is not '':
         subprocess.Popen([program_path, file_path])
     else:
         if sys.platform.startswith('darwin'):

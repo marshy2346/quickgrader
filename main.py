@@ -5,8 +5,7 @@ import signal
 from PyQt5.QtWidgets import (
     qApp,
     QApplication,
-    QMainWindow,
-    QAbstractItemView
+    QMainWindow, QAbstractItemView
 )
 
 from design import (
@@ -28,6 +27,9 @@ from project import (
 from settings import (
     SettingsManager
 )
+from settings_panel import (
+    SettingsPanel
+)
 from dialog import (
     show_message,
     show_warning,
@@ -48,24 +50,39 @@ from utils.parsing import (
 class QuickGrader(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.project_manager = ProjectManager() 
-        self.settings_manager = SettingsManager()
         self.stylesheet = None
+        self.project_manager = ProjectManager()
+        self.settings_manager = SettingsManager()
+        self.settings_manager.load()
 
         self.setupUi(self)
         self.__set_theme("default")
+        self.__setup_views()
+        self.__connect_actions()
+        self.__make_workspace_folder()
+        self.__signal_handlers()
+        self.__setup_keymappings()
 
+    def __setup_views(self):
         self.requirement_model = RequirementModel()
         self.requirements_view.setModel(self.requirement_model)
         self.requirements_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.requirements_view.horizontalHeader().setStretchLastSection(True)
         self.requirements_view.setCornerButtonEnabled(False)
-        self.__connect_actions()
-        self.__make_workspace_folder()
-        self.__signal_handlers()
+
+    def __setup_keymappings(self):
+        self.action_open_project.setShortcut(self.settings_manager.keymap['Open Project'])
+        self.action_new_project.setShortcut(self.settings_manager.keymap['New Project'])
+        self.action_save.setShortcut(self.settings_manager.keymap['Save'])
+        self.action_exit.setShortcut(self.settings_manager.keymap['Exit'])
+        self.action_export.setShortcut(self.settings_manager.keymap['Export'])
+        self.next_button.setShortcut(self.settings_manager.keymap['Next Submission'])
+        self.previous_button.setShortcut(self.settings_manager.keymap['Previous Submission'])
 
     def __signal_handlers(self):
-        signal.signal(signal.SIGINT, lambda: self.__save())
+        signal.signal(signal.SIGINT, lambda: self.__exit())
+        signal.signal(signal.SIGTERM, lambda: self.__exit())
+        signal.signal(signal.SIGQUIT, lambda: self.__exit())
 
     def __is_project_loaded(self):
         submission = self.project_manager.get_current_submission()
@@ -93,19 +110,20 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
 
         self.action_new_project.triggered.connect(self.__new_project)
         self.action_open_project.triggered.connect(self.__open_project)
+        self.action_save.triggered.connect(self.__save_project)
+        self.action_settings.triggered.connect(self.__open_settings_panel)
         self.action_exit.triggered.connect(self.__exit)
+        self.action_about.triggered.connect(self.__about)
 
         self.previous_button.clicked.connect(self.__prev_submission)
         self.next_button.clicked.connect(self.__next_submission)
 
-        self.add_requirement_button.clicked.connect(self.__add_requirement)
-        self.remove_requirement_button.clicked.connect(self.__remove_requirement)
+        self.add_requirement.clicked.connect(self.__add_requirement)
+        self.remove_requirement.clicked.connect(self.__remove_requirement)
 
     def __update_fileview(self):
         if self.__is_project_loaded():
             submission = self.project_manager.get_current_submission()
-            print("Submission Requirements ::: ")
-            print(submission.requirements)
             self.requirement_model.replace_data(submission.requirements)
             self.current_submission_label.setText(os.path.basename(submission.path))
 
@@ -174,6 +192,27 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
                 else:
                     show_message(self, INVALID_SOURCE_MESSAGE)
 
+    def __save_project(self):
+        if self.__is_project_loaded():
+            success = self.project_manager.save()
+            if success:
+                show_message(self, "Progress has been saved.")
+            else:
+                show_message(self, "Error occured during save. Please try again.")
+
+    def __about(self):
+        ABOUT = (
+            "This project was created in order to facilitate grading student submissions from Canvas."
+            "\n"
+            "\n"
+            "File bug reports and feature requests by visiting"
+            "\n"
+            "https://github.com/rayrase/quickgrader.git"
+            "\n\n"
+            "Created By Raisel Martinez | rayrase@github.com"
+        )
+        show_message(self, ABOUT)
+
     def __open_file(self, path):
         project_path = self.project_manager.state['project_path']
 
@@ -220,8 +259,11 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
 
         submission.requirements = data
 
+    def __open_settings_panel(self):
+        panel = SettingsPanel(self.settings_manager)
+        panel.exec_()
+
     def __exit(self):
-        print("__EXIT Called!")
         self.project_manager.save()
         qApp.exit()
 
