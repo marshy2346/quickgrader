@@ -9,7 +9,7 @@ def show_message(qt_widget, message):
     reply = QMessageBox.question(
         qt_widget, "Message", message, QMessageBox.Ok, QMessageBox.Ok
     )
-    
+
 def show_warning(qt_widget, warning):
     reply = QMessageBox.question(
         qt_widget, "Warning!", warning, QMessageBox.Ok | QMessageBox.Cancel, QMessageBox.Ok
@@ -29,4 +29,12 @@ def show_directory_request(qt_widget, title, root_path):
         qt_widget, title, root_path, opts
     ))
     return dirpath
+
+def show_file_request(qt_widget, title, root_path):
+    opts = QFileDialog.DontUseNativeDialog
+    filepath = QFileDialog.getOpenFileName(
+        qt_widget, title, root_path
+    )
+    return filepath
+
 

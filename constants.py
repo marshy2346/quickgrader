@@ -62,3 +62,4 @@ MESSAGE_PROJECT_EXISTS = (
     'The requested project name already exists.'
     ' Would you like to overwrite it?'
 )
+

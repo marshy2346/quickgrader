@@ -5,7 +5,9 @@ import signal
 from PyQt5.QtWidgets import (
     qApp,
     QApplication,
-    QMainWindow, QAbstractItemView
+    QMainWindow,
+    QAbstractItemView,
+    QPushButton
 )
 
 from ui.design import (
@@ -31,8 +33,11 @@ from managers.project import (
 from managers.settings import (
     SettingsManager
 )
-from ui.settings_panel import (
-    SettingsPanel
+from managers.plugin import (
+    PluginManager
+)
+from ui.settings import (
+   SettingsPanel
 )
 from utils.dialog import (
     show_message,
@@ -53,13 +58,39 @@ from utils.parsing import (
 # TODO: logic could be cleaned up
 
 
+class UIDelegator:
+    def __init__(self, delegate):
+        self.allowed_attrs = [
+            'settings_manager',
+            'show_message',
+            'get_selected_file',
+            'add_action',
+            'update_fileview'
+        ]
+        self.delegate = delegate
+
+    def __getattr__(self, name):
+        def wrapper(*args, **kwargs):
+            if hasattr(self.delegate, name):
+                attr = getattr(self.delegate, name)
+                if name not in self.allowed_attrs:
+                    return None
+                if callable(attr):
+                    return attr(*args, **kwargs)
+                else:
+                    return attr
+        return wrapper
+
+
 class QuickGrader(QMainWindow, Ui_MainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.stylesheet = None
+        self.selected_file = None
         self.project_manager = ProjectManager()
         self.settings_manager = SettingsManager()
         self.settings_manager.load()
+        self.plugin_manager = PluginManager(UIDelegator(self))
 
         self.setupUi(self)
         self.__set_theme(DEFAULT_THEME)
@@ -70,6 +101,7 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         self.__setup_keymappings()
 
     def __setup_views(self):
+        self.plugin_manager.setup()
         self.requirement_model = RequirementModel()
         self.requirements_view.setModel(self.requirement_model)
         self.requirements_view.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -93,12 +125,11 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         signal.signal(signal.SIGQUIT, lambda: self.__exit())
 
     def __is_project_loaded(self):
-        submission = self.project_manager.get_current_submission()
-        if submission is None:
+        if self.project_manager.is_project_loaded():
+            return True
+        else:
             show_message(self, MESSAGE_PROJECT_NOTLOADED)
             return False
-        else:
-            return True
 
     def __set_theme(self, name):
         self.current_submission_label.setStyleSheet("QLabel { color: #1DE9B6 }")
@@ -115,7 +146,7 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
 
     def __connect_actions(self):
         self.file_view.itemDoubleClicked.connect(lambda list_item: self.__open_file(list_item.text()))
-
+        self.file_view.itemClicked.connect(lambda list_item: self.__set_selected_file(list_item.text()))
         self.action_new_project.triggered.connect(self.__new_project)
         self.action_open_project.triggered.connect(self.__open_project)
         self.action_save.triggered.connect(self.__save_project)
@@ -129,7 +160,7 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         self.add_requirement.clicked.connect(self.__add_requirement)
         self.remove_requirement.clicked.connect(self.__remove_requirement)
 
-    def __update_fileview(self):
+    def update_fileview(self):
         if self.__is_project_loaded():
             submission = self.project_manager.get_current_submission()
 
@@ -176,7 +207,7 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
                 if success:
                     message = "Project setup complete!"
                     show_message(self, message)
-                    self.__update_fileview()
+                    self.update_fileview()
                     return
                 else:
                     if os.path.isdir(full_path):
@@ -195,7 +226,7 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
                 if success:
                     message = "Project loaded!"
                     show_message(self, message)
-                    self.__update_fileview()
+                    self.update_fileview()
                     return
                 else:
                     show_message(self, MESSAGE_INVALID_SOURCE)
@@ -221,7 +252,7 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         editor = None
         if self.settings_manager.default_editor is not None:
             editor = self.settings_manager.default_editor
-            
+
         submission = self.project_manager.get_current_submission()
         open_file(os.path.join(submission.path, path), editor)
 
@@ -229,13 +260,13 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         if self.__is_project_loaded():
             self.__update_submission_requirements()
             self.project_manager.prev_submission()
-            self.__update_fileview()
+            self.update_fileview()
 
     def __next_submission(self):
         if self.__is_project_loaded():
             self.__update_submission_requirements()
             self.project_manager.next_submission()
-            self.__update_fileview() 
+            self.update_fileview()
 
     def __add_requirement(self):
         if self.__is_project_loaded():
@@ -272,15 +303,30 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         submission.requirements = self.requirement_model.data[:]
 
     def __open_settings_panel(self):
-        # TODO: this should not be hard-coded, styles should be the same across all components
-        panel = SettingsPanel(self.settings_manager)
-        style = replace_vars(os.path.join("themes", "default.vars"), self.stylesheet)
-        panel.setStyleSheet(style)
-        panel.exec_()
+        panel = SettingsPanel(self.plugin_manager, self.settings_manager, self)
+        panel.show()
 
     def __exit(self):
         self.project_manager.save()
         qApp.exit()
+
+    def __set_selected_file(self, file):
+        submission = self.project_manager.get_current_submission()
+        if submission is not None:
+            self.selected_file = os.path.join(submission.path, file)
+
+    def get_selected_file(self):
+        return self.selected_file
+
+    def add_action(self, name, handler):
+        def handler_wrap():
+            if self.__is_project_loaded() and self.selected_file is not None:
+                handler(self.get_selected_file())
+        button = QPushButton()
+        button.setMinimumWidth(80)
+        button.setText(name)
+        button.clicked.connect(handler_wrap)
+        self.file_toolbar.layout().addWidget(button)
 
 
 if __name__ == '__main__':

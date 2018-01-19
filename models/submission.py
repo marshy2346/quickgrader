@@ -12,3 +12,16 @@ class Submission:
             if r != row:
                 new_requirements.append(self.requirements[r])
         self.requirements = new_requirements
+
+    def get_json(self):
+        requirements = []
+        for r in self.requirements():
+            requirements.append({
+                'requirement': self.requirements[r][0],
+                'value': self.requirements[r][1],
+                'comments': self.requirements[r][2]
+            })
+        return {
+            'path': path,
+            'requirements': requirements
+        }

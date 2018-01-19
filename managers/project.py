@@ -1,5 +1,6 @@
 import os
-import shutil 
+import json
+import shutil
 import pickle
 
 from utils.fs import (
@@ -31,7 +32,7 @@ class ProjectManager:
         }
 
     def __reset(self):
-        self.state['submissions'] = [] 
+        self.state['submissions'] = []
         self.state['finished_submissions'] = []
         self.state['current_submission_index'] = 0
 
@@ -55,7 +56,7 @@ class ProjectManager:
     def cleanup(self):
         if os.path.isdir(self.state['project_path']):
             shutil.rmtree(self.state['project_path'])
-        
+
     def new(self, project_path, source_directory):
         if is_directory(project_path) and self.__isvalid_source(source_directory):
             self.__reset()
@@ -70,11 +71,11 @@ class ProjectManager:
                     unzip(current_path, output_path)
                     flatdir(output_path)
                     self.state['submissions'].append(Submission(output_path))
-            
+
             return self.save() and len(self.state['submissions']) > 0 and self.state['project_path'] != None
         else:
             return False
-        
+
     def save(self):
         project_path = self.state['project_path']
         if is_directory(project_path):
@@ -105,12 +106,23 @@ class ProjectManager:
         else:
             return False
 
+    def is_project_loaded(self):
+        submission = self.get_current_submission()
+        return submission != None
+
     def get_current_submission(self):
         if len(self.state['submissions']) == 0:
             return None
 
         return self.state['submissions'][self.state['current_submission_index']]
-      
+
+    def get_submissions_json(self):
+        json = []
+        for submission in self.state['submissions']:
+            if submission is not None:
+                json.append(submission.get_json())
+        return json
+
     def next_submission(self):
         if len(self.state['submissions']) == 0:
             return

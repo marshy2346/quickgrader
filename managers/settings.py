@@ -1,14 +1,20 @@
 import os
-from configparser import ConfigParser
+import pickle
 
 from utils.fs import (
-    home
+    home,
+    is_file
 )
+
+
+SETTINGS_PATH = os.path.join(home(), '.qgsettings')
+SETTING_TYPE_FILE = "FILE"
+SETTING_TYPE_STRING = "STRING"
 
 
 class SettingsManager:
     def __init__(self):
-        self.default_editor = '' 
+        self.default_editor = ''
         self.keymap = {
             'New Project': 'Ctrl+I',
             'Open Project': 'Ctrl+O',
@@ -19,22 +25,42 @@ class SettingsManager:
             'Exit': 'Ctrl+Q',
             'Export': 'Ctrl+E'
         }
+        self.plugins = {}
+
+    def set_default_plugin_setting(self, plugin, setting, _type, value):
+        if plugin not in self.plugins:
+            self.plugins[plugin] = {}
+            self.plugins[plugin][setting] = {'type': _type, 'value': value}
+        else:
+            return
+
+    def get_plugin_settings(self, plugin):
+        if plugin in self.plugins:
+            return self.plugins[plugin]
+        return {}
 
     def save(self):
-        config = ConfigParser()
-        config.add_section('editor')
-        config.set('editor', 'default_editor', self.default_editor)
-
-        config.add_section('keymap')
-        config['keymap'] = self.keymap
-
-        with open(os.path.join(home(), '.qgsettings'), 'w') as f:
-            config.write(f)
+        with open(SETTINGS_PATH, 'wb') as settingsfile:
+            dump = {
+                'default_editor': self.default_editor,
+                'keymap': self.keymap,
+                'plugins': self.plugins
+            }
+            try:
+                pickle.dump(dump, settingsfile)
+                return True
+            except pickle.PicklingError:
+                return False
 
     def load(self):
-        path = os.path.join(home(), '.qgsettings')
-        if os.path.isfile(path):
-            config = ConfigParser()
-            config.read(path)
-            self.default_editor = config.get('editor', 'default_editor')
-            self.keymap = config['keymap']
+        if os.path.isfile(SETTINGS_PATH):
+            with open(SETTINGS_PATH, 'rb') as settingsfile:
+                try:
+                    dump = pickle.load(settingsfile)
+                    self.default_editor = dump['default_editor']
+                    self.keymap = dump['keymap']
+                    self.plugins = dump['plugins']
+                    return True
+                except pickle.UnpicklingError:
+                    return False
+        return False

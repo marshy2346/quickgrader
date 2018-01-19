@@ -19,11 +19,34 @@ from PyQt5.QtCore import (
 )
 
 from utils.dialog import (
-    show_message
+    show_message,
+    show_file_request
 )
 from constants import (
     MESSAGE_SETTINGS_EDITOR_HELP
 )
+
+class PluginsPage(QWidget):
+    def __init__(self, plugin_manager, settings_manager, parent=None):
+        super().__init__(parent)
+        self.settings_manager = settings_manager
+        self.plugin_manager = plugin_manager
+        self.container = QVBoxLayout()
+        self.__update_display()
+
+    def __update_display(self):
+        self.__clear_all()
+        for p in self.plugin_manager.plugins:
+            self.__add_plugin_settings(p)
+        self.setLayout(self.container)
+        self.update()
+
+    def __clear_all(self):
+        for i in reversed(range(self.container.count())):
+            self.container.itemAt(i).widget().setParent(None)
+
+    def __add_plugin_settings(plugin_name):
+        pass
 
 
 class EnvironmentPage(QWidget):
@@ -31,7 +54,7 @@ class EnvironmentPage(QWidget):
         super().__init__(parent)
         self.settings_manager = settings_manager
 
-        editor_group = QGroupBox("Editor Configuration")  
+        editor_group = QGroupBox("Editor Configuration")
 
         editor_label = QLabel("Editor:")
         self.editor_line = QLineEdit()
@@ -74,7 +97,7 @@ class EnvironmentPage(QWidget):
     def __update_editor(self):
         text = self.editor_line.text()
         if text is None or text == '' or text == 'default':
-            self.settings_manager.default_editor = '' 
+            self.settings_manager.default_editor = ''
             self.settings_manager.save()
             show_message(self, "Default settings active.")
         elif shutil.which(text) is None:
@@ -86,9 +109,10 @@ class EnvironmentPage(QWidget):
 
 
 class SettingsPanel(QDialog):
-    def __init__(self, settings_manager, parent=None):
+    def __init__(self, plugin_manager, settings_manager, parent=None):
         super().__init__(parent)
         self.settings_manager = settings_manager
+        self.plugin_manager = plugin_manager
         self.contents_widget = QListWidget()
         self.contents_widget.setMovement(QListView.Static)
         self.contents_widget.setMaximumWidth(105)
@@ -96,6 +120,7 @@ class SettingsPanel(QDialog):
 
         self.pages_widget = QStackedWidget()
         self.pages_widget.addWidget(EnvironmentPage(self.settings_manager))
+        self.pages_widget.addWidget(PluginsPage(self.plugin_manager, self.settings_manager))
 
         close_button = QPushButton("Close")
 
@@ -104,7 +129,7 @@ class SettingsPanel(QDialog):
 
         close_button.clicked.connect(self.close)
 
-        horizontal_layout = QHBoxLayout()    
+        horizontal_layout = QHBoxLayout()
         horizontal_layout.addWidget(self.contents_widget)
         horizontal_layout.addWidget(self.pages_widget, 1)
 
@@ -131,4 +156,9 @@ class SettingsPanel(QDialog):
         environment_button.setText("Environment")
         environment_button.setTextAlignment(Qt.AlignHCenter)
         environment_button.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+        plugins_button = QListWidgetItem(self.contents_widget)
+        plugins_button.setText("Plugins")
+        plugins_button.setTextAlignment(Qt.AlignCenter)
+        plugins_button.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+        self.contents_widget.currentItemChanged.connect(self.change_page)
 
