@@ -76,12 +76,18 @@ def compile_and_run(filepath, settings, show_message, update):
         stdin.close()
     update()
 
-def diff(filepath, settings):
-    #TODO: finish 
-    if SETTING_EXPECTED_OUTPUT_FILE in settings:
-        print("EXPECTED OUTPUT FILE :::")
-        print(settings[SETTING_EXPECTED_OUTPUT_FILE])
 
+def diff(filepath, settings):
+    if SETTING_EXPECTED_OUTPUT_FILE in settings:
+        print("YES")
+        file = settings[SETTING_EXPECTED_OUTPUT_FILE]['value']
+        runtime_out = os.path.join(os.path.dirname(filepath), RUNTIME_OUT_FILENAME)
+        if os.path.isfile(file):
+            if os.name == 'nt':
+                args = ["FC", file, runtime_out]
+            else:
+                args = ["vimdiff", file, runtime_out]
+            subprocess.Popen(args)
 
 def setup(plugin):
     """
@@ -112,7 +118,5 @@ def setup(plugin):
     )
     plugin.add_action(
         "Compare Output",
-        lambda filepath: diff(
-            filepath, plugin.get_settings()
-        )
+        lambda filepath: diff(filepath, plugin.get_settings())
     )
