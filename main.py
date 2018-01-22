@@ -59,6 +59,7 @@ from utils.parsing import (
 )
 
 # TODO: logic could be cleaned up
+# TODO: make stdout from java program appear dynamically
 
 
 class UIDelegator:

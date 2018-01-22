@@ -69,9 +69,12 @@ def compile_and_run(filepath, settings, show_message, update):
                 f.write(err)
             return
 
-        show_message(out)
         with open(RUNTIME_OUT_FILENAME, 'w') as f:
             f.write(out)
+
+        diff(filepath, settings)
+
+
     if stdin is not None:
         stdin.close()
     update()
@@ -79,7 +82,6 @@ def compile_and_run(filepath, settings, show_message, update):
 
 def diff(filepath, settings):
     if SETTING_EXPECTED_OUTPUT_FILE in settings:
-        print("YES")
         file = settings[SETTING_EXPECTED_OUTPUT_FILE]['value']
         runtime_out = os.path.join(os.path.dirname(filepath), RUNTIME_OUT_FILENAME)
         if os.path.isfile(file):
@@ -115,8 +117,4 @@ def setup(plugin):
         lambda filepath: compile_and_run(
             filepath, plugin.get_settings(), plugin.show_message, plugin.ui_delegator.update_fileview
         )
-    )
-    plugin.add_action(
-        "Compare Output",
-        lambda filepath: diff(filepath, plugin.get_settings())
     )
