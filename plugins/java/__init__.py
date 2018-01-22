@@ -4,7 +4,7 @@ import os
 from contextlib import contextmanager
 
 SETTING_INPUT_FILE = "Input File"
-EXPECTED_OUTPUT_FILE = "Expected Output File"
+SETTING_EXPECTED_OUTPUT_FILE = "Expected Output File"
 COMPILE_ERR_FILENAME = "compile_err.txt"
 RUNTIME_ERR_FILENAME = "run_err.txt"
 COMPILE_OUT_FILENAME = "compile_out.txt"
@@ -74,6 +74,13 @@ def compile_and_run(filepath, settings, show_message, update):
             f.write(out)
     update()
 
+def diff(filepath, settings):
+    #TODO: finish 
+    if SETTING_EXPECTED_OUTPUT_FILE in settings:
+        print("EXPECTED OUTPUT FILE :::")
+        print(settings[SETTING_EXPECTED_OUTPUT_FILE])
+
+
 
 def setup(plugin):
     """
@@ -93,9 +100,18 @@ def setup(plugin):
     :param plugin: injected plugin class that contains methods for plugin use
     :return: nothing
     """
+    plugin.add_default_setting(SETTING_INPUT_FILE, "FILE", "")
+    plugin.add_default_setting(SETTING_EXPECTED_OUTPUT_FILE, "FILE", "")
+
     plugin.add_action(
         "Run Java",
         lambda filepath: compile_and_run(
             filepath, plugin.get_settings(), plugin.show_message, plugin.ui_delegator.update_fileview
+        )
+    )
+    plugin.add_action(
+        "Compare Output",
+        lambda filepath: diff(
+            filepath, plugin.get_settings()
         )
     )

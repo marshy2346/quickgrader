@@ -31,12 +31,14 @@ class SettingsManager:
         if plugin not in self.plugins:
             self.plugins[plugin] = {}
             self.plugins[plugin][setting] = {'type': _type, 'value': value}
+        elif setting not in self.plugins[plugin]:
+            self.plugins[plugin][setting] = {'type': _type, 'value': value}
         else:
             return
 
-    def get_plugin_settings(self, plugin):
-        if plugin in self.plugins:
-            return self.plugins[plugin]
+    def get_plugin_settings(self, plugin_name):
+        if plugin_name in self.plugins:
+            return self.plugins[plugin_name]
         return {}
 
     def save(self):

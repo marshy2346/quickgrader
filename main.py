@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 import signal
 
 from PyQt5.QtWidgets import (
@@ -43,7 +44,8 @@ from utils.dialog import (
     show_message,
     show_warning,
     show_request,
-    show_directory_request
+    show_directory_request,
+    show_files_request
 )
 from utils.fs import (
     is_directory,
@@ -61,7 +63,6 @@ from utils.parsing import (
 class UIDelegator:
     def __init__(self, delegate):
         self.allowed_attrs = [
-            'settings_manager',
             'show_message',
             'get_selected_file',
             'add_action',
@@ -77,8 +78,6 @@ class UIDelegator:
                     return None
                 if callable(attr):
                     return attr(*args, **kwargs)
-                else:
-                    return attr
         return wrapper
 
 
@@ -153,25 +152,13 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         self.action_settings.triggered.connect(self.__open_settings_panel)
         self.action_exit.triggered.connect(self.__exit)
         self.action_about.triggered.connect(self.__about)
+        self.action_edit_add_files.triggered.connect(self.__add_files)
 
         self.previous_button.clicked.connect(self.__prev_submission)
         self.next_button.clicked.connect(self.__next_submission)
 
         self.add_requirement.clicked.connect(self.__add_requirement)
         self.remove_requirement.clicked.connect(self.__remove_requirement)
-
-    def update_fileview(self):
-        if self.__is_project_loaded():
-            submission = self.project_manager.get_current_submission()
-
-            self.requirement_model.replace_data(submission.requirements)
-            self.current_submission_label.setText(os.path.basename(submission.path))
-
-            self.file_view.clear()
-            for f in os.listdir(submission.path):
-                if f.startswith('_') or f.startswith('.'):
-                    continue
-                self.file_view.addItem(f)
 
     def __new_project(self):
         while True:
@@ -241,6 +228,16 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
 
     def __about(self):
         show_message(self, MESSAGE_ABOUT)
+
+    def __add_files(self):
+        if self.__is_project_loaded():
+            files = show_files_request(self, "Choose files to add", home())
+            for f in files:
+                for s in self.project_manager.state['submissions']:
+                    new_path = os.path.join(s.path, os.path.basename(f))
+                    print(new_path)
+                    shutil.copyfile(f, new_path)
+            self.update_fileview()
 
     def __open_file(self, path):
         project_path = self.project_manager.state['project_path']
@@ -314,6 +311,19 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         submission = self.project_manager.get_current_submission()
         if submission is not None:
             self.selected_file = os.path.join(submission.path, file)
+
+    def update_fileview(self):
+        if self.__is_project_loaded():
+            submission = self.project_manager.get_current_submission()
+
+            self.requirement_model.replace_data(submission.requirements)
+            self.current_submission_label.setText(os.path.basename(submission.path))
+
+            self.file_view.clear()
+            for f in os.listdir(submission.path):
+                if f.startswith('_') or f.startswith('.'):
+                    continue
+                self.file_view.addItem(f)
 
     def get_selected_file(self):
         return self.selected_file

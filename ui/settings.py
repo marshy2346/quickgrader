@@ -26,11 +26,13 @@ from constants import (
     MESSAGE_SETTINGS_EDITOR_HELP
 )
 
+
 class PluginsPage(QWidget):
-    def __init__(self, plugin_manager, settings_manager, parent=None):
+    def __init__(self, settings_manager, plugin_manager, parent=None):
         super().__init__(parent)
-        self.settings_manager = settings_manager
         self.plugin_manager = plugin_manager
+        self.settings_manager = settings_manager
+        self.setting_lines = {}
         self.container = QVBoxLayout()
         self.__update_display()
 
@@ -41,12 +43,43 @@ class PluginsPage(QWidget):
         self.setLayout(self.container)
         self.update()
 
+    def update_settings(self):
+        print("Updating settings for plugins")
+
     def __clear_all(self):
         for i in reversed(range(self.container.count())):
             self.container.itemAt(i).widget().setParent(None)
 
-    def __add_plugin_settings(plugin_name):
-        pass
+    def __get_setting_widget(self, setting, setting_dict):
+        # TODO: force plugins to have help buttons
+        widget = QWidget()
+        hlayout = QHBoxLayout()
+
+        label = QLabel(setting)
+        line = QLineEdit()
+
+        line.setText(setting_dict['value'])
+
+        edit = QPushButton()
+        edit.setText("Edit")
+
+        hlayout.addWidget(label)
+        hlayout.addWidget(line)
+        hlayout.addWidget(edit)
+
+        widget.setLayout(hlayout)
+
+        return widget
+
+    def __add_plugin_settings(self, plugin):
+        group = QGroupBox(plugin.name)
+        layout = QVBoxLayout()
+        settings = plugin.get_settings()
+        for setting in settings.keys():
+            widget = self.__get_setting_widget(setting, settings[setting])
+            layout.addWidget(widget)
+        group.setLayout(layout)
+        self.container.addWidget(group)
 
 
 class EnvironmentPage(QWidget):
@@ -91,6 +124,9 @@ class EnvironmentPage(QWidget):
         else:
             self.editor_line.setText(self.settings_manager.default_editor)
 
+    def update_settings(self):
+        print("Updating settings for env")
+
     def __show_help(self):
         show_message(self, MESSAGE_SETTINGS_EDITOR_HELP)
 
@@ -120,14 +156,16 @@ class SettingsPanel(QDialog):
 
         self.pages_widget = QStackedWidget()
         self.pages_widget.addWidget(EnvironmentPage(self.settings_manager))
-        self.pages_widget.addWidget(PluginsPage(self.plugin_manager, self.settings_manager))
+        self.pages_widget.addWidget(PluginsPage(self.settings_manager, self.plugin_manager))
 
         close_button = QPushButton("Close")
+        update_button = QPushButton("Update")
 
         self.__create_icons()
         self.contents_widget.setCurrentRow(0)
 
         close_button.clicked.connect(self.close)
+        update_button.clicked.connect(lambda: self.pages_widget.currentWidget().update_settings())
 
         horizontal_layout = QHBoxLayout()
         horizontal_layout.addWidget(self.contents_widget)
@@ -135,6 +173,7 @@ class SettingsPanel(QDialog):
 
         buttons_layout = QHBoxLayout()
         buttons_layout.addStretch(1)
+        buttons_layout.addWidget(update_button)
         buttons_layout.addWidget(close_button)
 
         main_layout = QVBoxLayout()
