@@ -17,9 +17,9 @@ class Submission:
         requirements = []
         for r in self.requirements:
             requirements.append({
-                'requirement': self.requirements[r][0],
-                'value': self.requirements[r][1],
-                'comments': self.requirements[r][2]
+                'requirement': r[0],
+                'value': r[1],
+                'comments': r[2]
             })
         return {
             'path': self.path,

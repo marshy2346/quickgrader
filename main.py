@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import shutil
 import signal
 
@@ -153,6 +154,7 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
         self.action_exit.triggered.connect(self.__exit)
         self.action_about.triggered.connect(self.__about)
         self.action_edit_add_files.triggered.connect(self.__add_files)
+        self.action_export.triggered.connect(self.__export)
 
         self.previous_button.clicked.connect(self.__prev_submission)
         self.next_button.clicked.connect(self.__next_submission)
@@ -232,6 +234,9 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
     def __add_files(self):
         if self.__is_project_loaded():
             files = show_files_request(self, "Choose files to add", home())
+            if len(files) == 0:
+                show_message(self, "No files added.")
+                return
             for f in files:
                 for s in self.project_manager.state['submissions']:
                     new_path = os.path.join(s.path, os.path.basename(f))
@@ -243,6 +248,18 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
                 "{}".format("\n".join(files))
             )
             show_message(self, message)
+
+    def __export(self):
+        if self.__is_project_loaded():
+            export_dir = show_directory_request(self, "Export Destination", home())
+            if export_dir is None or export_dir == '':
+                show_message(self, "No export destination was chosen.")
+                return
+            project_dir = os.path.join(os.path.dirname(self.project_manager.get_current_submission().path))
+            export_path = os.path.join(export_dir, os.path.basename(project_dir) + "_QG_EXPORT.json")
+            with open(export_path, 'w') as f:
+                json.dump(self.project_manager.get_submissions_json(), f)
+            show_message(self, "Files exported to {}".format(export_path))
 
     def __open_file(self, path):
         project_path = self.project_manager.state['project_path']
