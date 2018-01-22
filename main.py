@@ -238,6 +238,11 @@ class QuickGrader(QMainWindow, Ui_MainWindow):
                     print(new_path)
                     shutil.copyfile(f, new_path)
             self.update_fileview()
+            message = (
+                "The following files were added to all submissions folders\n\n"
+                "{}".format("\n".join(files))
+            )
+            show_message(self, message)
 
     def __open_file(self, path):
         project_path = self.project_manager.state['project_path']
