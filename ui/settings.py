@@ -47,7 +47,12 @@ class PluginsPage(QWidget):
         self.update()
 
     def update_settings(self):
-        print("Updating settings for plugins")
+        for k, v in self.setting_lines.items():
+            for p in self.plugin_manager.plugins:
+                if k in p.get_settings():
+                    self.settings_manager.update_plugin_setting(p.name, k, v.text())
+        self.settings_manager.save()
+        show_message(self, "Settings updated!")
 
     def __clear_all(self):
         for i in reversed(range(self.container.count())):
@@ -60,6 +65,7 @@ class PluginsPage(QWidget):
 
         label = QLabel(setting)
         line = QLineEdit()
+        self.setting_lines[setting] = line
 
         line.setText(setting_dict['value'])
 

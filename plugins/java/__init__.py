@@ -49,7 +49,7 @@ def compile_and_run(filepath, settings, show_message, update):
     filename = os.path.basename(filepath)
 
     if SETTING_INPUT_FILE in settings:
-        stdin = settings[SETTING_INPUT_FILE]['value']
+        stdin = open(settings[SETTING_INPUT_FILE]['value'], 'r')
     else:
         stdin = None
 
@@ -72,6 +72,8 @@ def compile_and_run(filepath, settings, show_message, update):
         show_message(out)
         with open(RUNTIME_OUT_FILENAME, 'w') as f:
             f.write(out)
+    if stdin is not None:
+        stdin.close()
     update()
 
 def diff(filepath, settings):
@@ -79,7 +81,6 @@ def diff(filepath, settings):
     if SETTING_EXPECTED_OUTPUT_FILE in settings:
         print("EXPECTED OUTPUT FILE :::")
         print(settings[SETTING_EXPECTED_OUTPUT_FILE])
-
 
 
 def setup(plugin):

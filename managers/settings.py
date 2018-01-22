@@ -36,6 +36,13 @@ class SettingsManager:
         else:
             return
 
+    def update_plugin_setting(self, plugin, setting, val):
+        if plugin not in self.plugins:
+            return
+        if setting not in self.plugins[plugin]:
+            return
+        self.plugins[plugin][setting]['value'] = val
+
     def get_plugin_settings(self, plugin_name):
         if plugin_name in self.plugins:
             return self.plugins[plugin_name]
@@ -64,5 +71,7 @@ class SettingsManager:
                     self.plugins = dump['plugins']
                     return True
                 except pickle.UnpicklingError:
+                    return False
+                except EOFError:
                     return False
         return False
