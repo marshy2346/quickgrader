@@ -22,6 +22,9 @@ from utils.dialog import (
     show_message,
     show_file_request
 )
+from utils.fs import (
+    home
+)
 from constants import (
     MESSAGE_SETTINGS_EDITOR_HELP
 )
@@ -60,16 +63,24 @@ class PluginsPage(QWidget):
 
         line.setText(setting_dict['value'])
 
-        edit = QPushButton()
-        edit.setText("Edit")
-
         hlayout.addWidget(label)
         hlayout.addWidget(line)
-        hlayout.addWidget(edit)
+
+        if setting_dict['type'] == "FILE":
+            edit = QPushButton()
+            edit.setText("Choose...")
+            edit.clicked.connect(lambda: self.__choose_file(line))
+            hlayout.addWidget(edit)
 
         widget.setLayout(hlayout)
 
         return widget
+
+    def __choose_file(self, line):
+        file = show_file_request(self, "Choose File", home())[0]
+        if file == '' or file is None:
+            return
+        line.setText(file)
 
     def __add_plugin_settings(self, plugin):
         group = QGroupBox(plugin.name)
