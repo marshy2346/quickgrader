@@ -11,7 +11,7 @@ buildOptions = dict(packages = [], excludes = [], include_files=[
 import sys
 base = 'Win32GUI' if sys.platform=='win32' else None
 executables = [
-    Executable('main.py', base=base)
+    Executable('quickgrader.py', base=base)
 ]
 
 setup(name='QuickGrader',
